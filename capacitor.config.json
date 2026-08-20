@@ -1,0 +1,9 @@
+{
+  "appId": "com.juan.menus",
+  "appName": "Mes Menus",
+  "webDir": "www",
+  "server": {
+    "url": "https://menusleyrieu-oofmumf5c-juan-s-app.vercel.app",
+    "cleartext": true
+  }
+}
