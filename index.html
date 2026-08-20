@@ -442,7 +442,10 @@
       <!-- Modale de modification de recette -->
       <div id="modal-edit-recette" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 10px;">
         <div style="background: white; padding: 20px; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
-          <h3 style="margin-top: 0; color: var(--primary);">Modifier la recette</h3>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+            <h3 style="margin: 0; color: var(--primary);">Modifier la recette</h3>
+            <button class="btn-primary" style="background: #64748b; padding: 4px 10px;" onclick="fermerModalEdition()">✕</button>
+          </div>
           <input type="hidden" id="edit-recette-id">
           <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
             <label style="font-size: 0.9rem; font-weight: bold;">Nom de la recette :</label>
@@ -513,12 +516,7 @@
     let decalageSemaine = 0;
     let promiseSauvegardeEnCours = Promise.resolve();
 
-    const coulerusParDefaut = {
-      'Entrée': '#fef3c7',
-      'Plat': '#dcfce7',
-      'Accompagnement': '#e0f2fe',
-      'Dessert': '#fce7f3'
-    };
+    const coulerusParDefaut = {'Entrée': '#ffff00', 'Plat': '#00ff00', 'Accompagnement': '#0000ff', 'Dessert': '#ff00ff'};
 
     function obtenirCouleursCategories() {
       const recup = localStorage.getItem('couleurs_categories');
@@ -548,20 +546,17 @@
         if (val && val !== '' && val !== '__Nouveau__') {
           select.classList.add('has-value');
           
-          // RECHERCHE DU TYPE DE RECETTE :
-          // On cherche la recette dans la liste globale pour trouver son type
           const recetteTrouvee = listeRecettes.find(r => r.id == val);
           const typeRecette = recetteTrouvee ? (recetteTrouvee.type || 'Plat') : 'Plat';
 
-          // Application de la couleur correspondante
           if (couleurs[typeRecette]) {
             select.style.backgroundColor = couleurs[typeRecette];
           } else {
-            select.style.backgroundColor = '#dcfce7'; // Couleur par défaut si non trouvée
+            select.style.backgroundColor = '#dcfce7'; 
           }
         } else {
           select.classList.remove('has-value');
-          select.style.backgroundColor = '#cbd5e1'; // Couleur pour le menu vide
+          select.style.backgroundColor = '#cbd5e1'; 
         }
       });
     }
@@ -801,7 +796,7 @@
       if (typeVal === '__Nouveau__') {
         typeVal = inputNouveauType ? inputNouveauType.value.trim() : '';
         if (!typeVal) {
-          alert("Veuillez saisir un nom pour le nouveau type.");
+          alert("Voulez-vous bien saisir un nom pour le nouveau type.");
           return;
         }
         if (inputCouleurChoisie) {
@@ -1047,7 +1042,6 @@
 
       typesTries.forEach(type => {
         const recettesDuType = recettesParType[type].sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
-        // Ajout d'une balise visuelle textuelle pour distinguer les catégories dans le menu natif mobile
         options += `<optgroup label="📂 --- ${type.toUpperCase()} ---">`;
         options += recettesDuType.map(r => 
           `<option value="${r.id}" ${r.id == selectedId ? 'selected' : ''}>${r.nom}</option>`
@@ -1544,7 +1538,6 @@
 
       let lignesTableau = '';
 
-      // Midi
       lignesTableau += `<tr><th style="border: 1px solid var(--border); padding: 10px; background: #e2e8f0; text-align: center;">Midi</th>`;
       datesSemaine.forEach(dateStr => {
         const entree = getCellContent(dateStr, 'midi', 'entree');
@@ -1567,7 +1560,6 @@
       });
       lignesTableau += `</tr>`;
 
-      // Goûter
       lignesTableau += `<tr><th style="border: 1px solid var(--border); padding: 10px; background: #e2e8f0; text-align: center;">Goûter</th>`;
       datesSemaine.forEach(dateStr => {
         const gouter = getGouterContent(dateStr);
@@ -1575,7 +1567,6 @@
       });
       lignesTableau += `</tr>`;
 
-      // Soir
       lignesTableau += `<tr><th style="border: 1px solid var(--border); padding: 10px; background: #e2e8f0; text-align: center;">Soir</th>`;
       datesSemaine.forEach(dateStr => {
         const entree = getCellContent(dateStr, 'soir', 'entree');
