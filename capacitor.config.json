@@ -3,7 +3,7 @@
   "appName": "Mes Menus",
   "webDir": "www",
   "server": {
-    "url": "https://menusleyrieu-oofmumf5c-juan-s-app.vercel.app",
+    "url": "https://app-menus-leyrieu-git-main-juan-s-app.vercel.app",
     "cleartext": true
   }
 }
