@@ -484,25 +484,24 @@
         <div id="liste-recettes">Chargement...[cite: 1]</div>
       </div>
 	  
-      <!-- Modale de modification de recette -->
-      <div id="modal-edit-recette" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 10px;">
-        <div style="background: white; padding: 20px; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto;">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-            <h3 style="margin: 0; color: var(--primary);">Modifier la recette</h3>
-          </div>
+      <!-- Modale de modification des étapes de la recette (Pleine hauteur) -->
+      <div id="modal-edit-recette" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 0;">
+        <div style="background: white; padding: 20px; width: 100%; height: 100%; max-width: 100%; max-height: 100vh; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow-y: auto;">
           <input type="hidden" id="edit-recette-id">
-          <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px;">
-            <label style="font-size: 0.9rem; font-weight: bold;">Nom de la recette :</label>
-            <input type="text" id="edit-recette-nom">
-            
-            <label style="font-size: 0.9rem; font-weight: bold;">Catégorie :</label>
-            <select id="edit-recette-type" onchange="gererChangementTypeEdition()">
-            </select>
-            <input type="text" id="edit-recette-nouveau-type" placeholder="Nouveau type..." style="display: none;">
+          <!-- Champs cachés conservés pour éviter les erreurs dans les fonctions JS existantes -->
+          <input type="hidden" id="edit-recette-nom">
+          <select id="edit-recette-type" style="display: none;"></select>
+          <input type="text" id="edit-recette-nouveau-type" style="display: none;">
 
-            <label style="font-size: 0.9rem; font-weight: bold;">Réalisation (Étapes) :</label>
-            <textarea id="edit-recette-realisation" rows="5" placeholder="Décrivez les étapes de préparation..." style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 0.9rem;"></textarea>
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
+            <h3 id="modal-recette-titre" style="margin: 0; color: var(--primary); font-size: 1.2rem;">Nom de la recette</h3>
+            <button class="btn-primary" style="background: #64748b;" onclick="fermerModalEdition()">Fermer ✕</button>
           </div>
+
+          <div style="display: flex; flex-direction: column; gap: 10px; flex: 1; margin-bottom: 15px;">
+            <textarea id="edit-recette-realisation" placeholder="Décrivez les étapes de préparation..." style="width: 100%; height: 100%; flex: 1; min-height: 60vh; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 1rem; resize: none;"></textarea>
+          </div>
+
           <div style="display: flex; justify-content: flex-end; gap: 8px;">
             <button class="btn-primary" style="background: #64748b;" onclick="fermerModalEdition()">Annuler</button>
             <button class="btn-primary" onclick="sauvegarderEditionRecette()">Enregistrer</button>
@@ -554,7 +553,7 @@
   <script>
     
     const SUPABASE_URL = "https://ppyoygdxputwcrmdkpvm.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBweW95Z2R4cHV0d2NybWRrcHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNDM4NjAsImV4cCI6MjEwMjYxOTg2MH0.58sY1K5Edlg6pD_obyPkHdZV2yfNeQjWZLYhkGLOeJM";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBweW95Z2R4cHV0d2NybWRrcHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODtokzAxMzg2MCwiZXhwIjoyMTAyNjE5ODYwf0.58sY1K5Edlg6pD_obyPkHdZV2yfNeQjWZLYhkGLOeJM";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let listeRecettes = [];
@@ -818,9 +817,11 @@
                 </details>
                 <div class="courses-actions" style="flex-shrink: 0; margin-left: 8px; display: flex; gap: 6px; align-items: center;">
                   <button class="btn-action-icon" title="Réalisation de la recette" onclick="ouvrirModalEdition(${r.id}, '${r.nom.replace(/'/g, "\\'")}', '${(r.type || 'Plat').replace(/'/g, "\\'")}')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
                       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                      <line x1="9" y1="7" x2="15" y2="7"></line>
+                      <line x1="9" y1="11" x2="15" y2="11"></line>
                     </svg>
                   </button>
                   <button class="btn-action-icon" title="Partager" onclick="exporterRecette(${r.id})">
@@ -1527,6 +1528,7 @@
     function ouvrirModalEdition(id, nom, typeActuel) {
       document.getElementById('edit-recette-id').value = id;
       document.getElementById('edit-recette-nom').value = nom;
+      document.getElementById('modal-recette-titre').textContent = nom;
 
       const recetteObj = listeRecettes.find(r => r.id === id);
       document.getElementById('edit-recette-realisation').value = recetteObj && recetteObj.realisation ? recetteObj.realisation : '';
@@ -1546,7 +1548,6 @@
         selectType.value = typeActuel;
       } else {
         selectType.value = '__Nouveau__';
-        inputNouveau.style.display = 'block';
         inputNouveau.value = typeActuel;
       }
 
