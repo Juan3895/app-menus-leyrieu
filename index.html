@@ -1051,15 +1051,15 @@
       const cal = document.getElementById('calendrier');
       if (!cal) return;
 
+      // 1. Mémoriser les états d'ouverture par ID unique (date)
       const detailsOuverts = new Set();
-      cal.querySelectorAll('details.presences-details[open]').forEach(el => {
-        detailsOuverts.add(el.getAttribute('data-id'));
+      cal.querySelectorAll('details.jour-details[open]').forEach(el => {
+        detailsOuverts.add(el.getAttribute('data-date'));
       });
-
-      // Mémoriser également l'état d'ouverture des jours
-      const joursOuverts = new Set();
-      cal.querySelectorAll('details.jour-details[open]').forEach((el, index) => {
-        joursOuverts.add(index);
+      
+      const presencesOuvertes = new Set();
+      cal.querySelectorAll('details.presences-details[open]').forEach(el => {
+        presencesOuvertes.add(el.getAttribute('data-id'));
       });
 
       let html = '';
@@ -1068,17 +1068,18 @@
       datesSemaine.forEach((dateStr, idx) => {
         const dateObj = new Date(dateStr);
         const dateAffichee = `${joursNoms[idx]} ${dateObj.getDate()}/${dateObj.getMonth() + 1}`;
-        const isJourOpen = joursOuverts.has(idx) ? 'open' : '';
+        // On vérifie si ce jour était ouvert
+        const isOpen = detailsOuverts.has(dateStr) ? 'open' : '';
 
         html += `
-          <details class="jour-details" ${isJourOpen}>
+          <details class="jour-details" data-date="${dateStr}" ${isOpen}>
             <summary class="jour-summary">
               <span>${dateAffichee}</span>
             </summary>
             <div class="jour-content">
-              ${creneauHTML(dateStr, 'midi', detailsOuverts)}
-              ${creneauHTML(dateStr, 'gouter', detailsOuverts)}
-              ${creneauHTML(dateStr, 'soir', detailsOuverts)}
+              ${creneauHTML(dateStr, 'midi', presencesOuvertes)}
+              ${creneauHTML(dateStr, 'gouter', presencesOuvertes)}
+              ${creneauHTML(dateStr, 'soir', presencesOuvertes)}
             </div>
           </details>
         `;
