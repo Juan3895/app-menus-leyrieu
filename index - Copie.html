@@ -486,7 +486,7 @@
 	  
       <!-- Modale de modification de recette -->
       <div id="modal-edit-recette" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 10px;">
-        <div style="background: white; padding: 20px; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-height: 90vh; overflow-y: auto;">
+        <div style="background: white; padding: 20px; border-radius: 8px; width: 100%; max-width: 400px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
             <h3 style="margin: 0; color: var(--primary);">Modifier la recette</h3>
           </div>
@@ -499,9 +499,6 @@
             <select id="edit-recette-type" onchange="gererChangementTypeEdition()">
             </select>
             <input type="text" id="edit-recette-nouveau-type" placeholder="Nouveau type..." style="display: none;">
-
-            <label style="font-size: 0.9rem; font-weight: bold;">Réalisation (Étapes) :</label>
-            <textarea id="edit-recette-realisation" rows="5" placeholder="Décrivez les étapes de préparation..." style="width: 100%; padding: 8px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 0.9rem;"></textarea>
           </div>
           <div style="display: flex; justify-content: flex-end; gap: 8px;">
             <button class="btn-primary" style="background: #64748b;" onclick="fermerModalEdition()">Annuler</button>
@@ -798,10 +795,6 @@
               `).join('')
             : '<em style="font-size:0.8rem; color:#94a3b8;">Aucun ingrédient</em>';
 
-          const realisationHTML = r.realisation 
-            ? `<div style="margin-top: 6px; font-size: 0.9rem; background: var(--bg); padding: 8px; border-radius: 6px; white-space: pre-line;"><strong>Réalisation :</strong><br>${r.realisation}</div>`
-            : '';
-
           return `
             <li style="flex-direction:column; align-items:flex-start; margin-bottom: 12px; width: 100%;">
               <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:4px;">
@@ -810,19 +803,12 @@
                     <strong style="font-size:1.05rem; color:#1e293b;">${r.nom}</strong>
                   </summary>
                   <div style="margin-top:8px; margin-bottom:8px;">${tagsHTML}</div>
-                  ${realisationHTML}
                   <div class="ingredient-row" style="width:100%;">
                     <input type="text" id="ing-${r.id}" placeholder="+ Ingrédient (ex: 500g Pâtes)">
                     <button class="btn-primary" onclick="ajouterIngredient(${r.id})">Ajouter</button>
                   </div>
                 </details>
-                <div class="courses-actions" style="flex-shrink: 0; margin-left: 8px; display: flex; gap: 6px; align-items: center;">
-                  <button class="btn-action-icon" title="Réalisation de la recette" onclick="ouvrirModalEdition(${r.id}, '${r.nom.replace(/'/g, "\\'")}', '${(r.type || 'Plat').replace(/'/g, "\\'")}')">
-                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
-                      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                    </svg>
-                  </button>
+                <div class="courses-actions" style="flex-shrink: 0; margin-left: 8px;">
                   <button class="btn-action-icon" title="Partager" onclick="exporterRecette(${r.id})">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
                       <circle cx="18" cy="5" r="3"></circle>
@@ -871,7 +857,7 @@
         }
       }
 
-      const { error } = await _supabase.from('recettes').insert([{ nom: nomVal, type: typeVal, realisation: '' }]);
+      const { error } = await _supabase.from('recettes').insert([{ nom: nomVal, type: typeVal }]);
       if (error) {
         alert("Erreur lors de l'enregistrement.");
         return;
@@ -921,7 +907,6 @@
       const objetExport = {
         nom: recette.nom,
         type: recette.type || 'Plat',
-        realisation: recette.realisation || '',
         ingredients: (ingredients || []).map(i => i.nom_ingredient)
       };
 
@@ -956,7 +941,7 @@
         return;
       }
 
-      const { data: newRecette } = await _supabase.from('recettes').insert([{ nom: importData.nom, type: importData.type || 'Plat', realisation: importData.realisation || '' }]).select();
+      const { data: newRecette } = await _supabase.from('recettes').insert([{ nom: importData.nom, type: importData.type || 'Plat' }]).select();
       if (newRecette && newRecette[0] && importData.ingredients) {
         const payloadIngs = importData.ingredients.map(nomIng => ({ recette_id: newRecette[0].id, nom_ingredient: nomIng }));
         await _supabase.from('recette_ingredients').insert(payloadIngs);
@@ -1066,6 +1051,7 @@
       const cal = document.getElementById('calendrier');
       if (!cal) return;
 
+      // 1. Mémoriser les états d'ouverture par ID unique (date)
       const detailsOuverts = new Set();
       cal.querySelectorAll('details.jour-details[open]').forEach(el => {
         detailsOuverts.add(el.getAttribute('data-date'));
@@ -1082,6 +1068,7 @@
       datesSemaine.forEach((dateStr, idx) => {
         const dateObj = new Date(dateStr);
         const dateAffichee = `${joursNoms[idx]} ${dateObj.getDate()}/${dateObj.getMonth() + 1}`;
+        // On vérifie si ce jour était ouvert
         const isOpen = detailsOuverts.has(dateStr) ? 'open' : '';
 
         html += `
@@ -1528,9 +1515,6 @@
       document.getElementById('edit-recette-id').value = id;
       document.getElementById('edit-recette-nom').value = nom;
 
-      const recetteObj = listeRecettes.find(r => r.id === id);
-      document.getElementById('edit-recette-realisation').value = recetteObj && recetteObj.realisation ? recetteObj.realisation : '';
-
       const selectType = document.getElementById('edit-recette-type');
       const inputNouveau = document.getElementById('edit-recette-nouveau-type');
       inputNouveau.style.display = 'none';
@@ -1572,7 +1556,6 @@
     async function sauvegarderEditionRecette() {
       const id = document.getElementById('edit-recette-id').value;
       const nouveauNom = document.getElementById('edit-recette-nom').value.trim();
-      const nouvelleRealisation = document.getElementById('edit-recette-realisation').value.trim();
       const selectType = document.getElementById('edit-recette-type');
       const inputNouveau = document.getElementById('edit-recette-nouveau-type');
 
@@ -1584,7 +1567,7 @@
         if (!nouveauType) return;
       }
 
-      await _supabase.from('recettes').update({ nom: nouveauNom, type: nouveauType, realisation: nouvelleRealisation }).eq('id', id);
+      await _supabase.from('recettes').update({ nom: nouveauNom, type: nouveauType }).eq('id', id);
       fermerModalEdition();
       await chargerRecettes();
     }
