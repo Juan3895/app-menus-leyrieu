@@ -392,6 +392,15 @@
     transform: scale(1.15);
     border-color: var(--primary);
   }
+  
+  /* Style des images insérées dans les étapes */
+  #edit-recette-realisation img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 6px;
+    margin: 8px 0;
+    display: block;
+  }
 </style>
 </head>
 <script>
@@ -512,6 +521,14 @@
             <div style="display: flex; align-items: center; gap: 4px; font-size: 0.85rem;">
               <span>Surlignage:</span>
               <input type="color" value="#fef08a" onchange="document.execCommand('hiliteColor', false, this.value)" style="width: 30px; height: 26px; padding: 0; border: 1px solid var(--border); background: transparent; cursor: pointer;" title="Surlignage">
+            </div>
+            
+            <!-- Boutons d'insertion d'image (Appareil photo / Galerie) -->
+            <div style="display: flex; gap: 4px; margin-left: auto;">
+              <button type="button" class="btn-primary" style="padding: 4px 10px; font-size: 0.85rem; background: #059669;" onclick="document.getElementById('input-camera-recette').click()" title="Prendre une photo">📸 Photo</button>
+              <button type="button" class="btn-primary" style="padding: 4px 10px; font-size: 0.85rem; background: #0284c7;" onclick="document.getElementById('input-galerie-recette').click()" title="Choisir dans la galerie">🖼️ Galerie</button>
+              <input type="file" id="input-camera-recette" accept="image/*" capture="environment" style="display: none;" onchange="insererImageRecette(event)">
+              <input type="file" id="input-galerie-recette" accept="image/*" style="display: none;" onchange="insererImageRecette(event)">
             </div>
           </div>
 
@@ -1147,6 +1164,16 @@
     }
 
     function optionsRecettesHTML(selectedId) {
+      // 1. Calculer la dernière réalisation pour chaque recette
+      const derniereRealisationParRecette = {};
+      planningData.forEach(p => {
+        if (p.recette_id && p.date) {
+          if (!derniereRealisationParRecette[p.recette_id] || p.date > derniereRealisationParRecette[p.recette_id]) {
+            derniereRealisationParRecette[p.recette_id] = p.date;
+          }
+        }
+      });
+
       const recettesParType = {};
       listeRecettes.forEach(r => {
         const type = r.type || 'Plat';
@@ -1161,9 +1188,21 @@
       typesTries.forEach(type => {
         const recettesDuType = recettesParType[type].sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
         options += `<optgroup label="📂 --- ${type.toUpperCase()} ---">`;
-        options += recettesDuType.map(r => 
-          `<option value="${r.id}" ${r.id == selectedId ? 'selected' : ''}>${r.nom}</option>`
-        ).join('');
+        options += recettesDuType.map(r => {
+          const nomEchape = r.nom.replace(/"/g, '&quot;');
+          const dateBrute = derniereRealisationParRecette[r.id]; // Ex: 2026-08-17
+          
+          let attributTitle = "";
+          if (dateBrute) {
+            // Découpage de la date : [2026, 08, 17]
+            const parts = dateBrute.split('-');
+            // Reformatage : 17/08/2026
+            const dateFormatee = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            attributTitle = `title="Dernière réalisation : ${dateFormatee}"`;
+          }
+          
+          return `<option value="${r.id}" data-short="${nomEchape}" ${r.id == selectedId ? 'selected' : ''} ${attributTitle}>${r.nom}</option>`;
+        }).join('');
         options += `</optgroup>`;
       });
 
@@ -1589,6 +1628,52 @@
       await _supabase.from('recettes').update({ realisation: nouvelleRealisation }).eq('id', id);
       fermerModalEdition();
       await chargerRecettes();
+    }
+
+    // Fonction pour insérer et compresser l'image dans l'éditeur de texte
+    function insererImageRecette(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          const MAX_WIDTH = 800;
+          const MAX_HEIGHT = 800;
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > MAX_WIDTH) {
+              height *= MAX_WIDTH / width;
+              width = MAX_WIDTH;
+            }
+          } else {
+            if (height > MAX_HEIGHT) {
+              width *= MAX_HEIGHT / height;
+              height = MAX_HEIGHT;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          const dataUrl = canvas.toDataURL('image/jpeg', 0.7);
+
+          const editor = document.getElementById('edit-recette-realisation');
+          editor.focus();
+          
+          const imgHtml = `<img src="${dataUrl}" alt="Photo étape">`;
+          document.execCommand('insertHTML', false, imgHtml);
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+      event.target.value = ''; // Réinitialisation de l'input file
     }
 
     function ouvrirModalInfosRecette(id, nom, typeActuel) {
