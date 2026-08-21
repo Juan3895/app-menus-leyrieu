@@ -488,23 +488,66 @@
       <div id="modal-edit-recette" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 0;">
         <div style="background: white; padding: 20px; width: 100%; height: 100%; max-width: 100%; max-height: 100vh; display: flex; flex-direction: column; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow-y: auto;">
           <input type="hidden" id="edit-recette-id">
-          <!-- Champs cachés conservés pour éviter les erreurs dans les fonctions JS existantes -->
-          <input type="hidden" id="edit-recette-nom">
-          <select id="edit-recette-type" style="display: none;"></select>
-          <input type="text" id="edit-recette-nouveau-type" style="display: none;">
 
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid var(--border); padding-bottom: 10px;">
             <h3 id="modal-recette-titre" style="margin: 0; color: var(--primary); font-size: 1.2rem;">Nom de la recette</h3>
             <button class="btn-primary" style="background: #64748b;" onclick="fermerModalEdition()">Fermer ✕</button>
           </div>
 
+          <!-- Boîte à outils de formatage de texte -->
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 8px; background: var(--bg); padding: 8px; border: 1px solid var(--border); border-radius: 6px;">
+            <button type="button" class="btn-primary" style="padding: 4px 10px; font-size: 0.85rem; font-weight: bold;" onclick="document.execCommand('bold', false, null)" title="Gras">B</button>
+            <button type="button" class="btn-primary" style="padding: 4px 10px; font-size: 0.85rem; text-decoration: underline;" onclick="document.execCommand('underline', false, null)" title="Souligné">S</button>
+            <select onchange="document.execCommand('fontSize', false, this.value); this.value='';" style="width: auto; padding: 4px 8px; font-size: 0.85rem;" title="Taille de police">
+              <option value="" disabled selected>Taille</option>
+              <option value="2">Petit</option>
+              <option value="3">Normal</option>
+              <option value="5">Grand</option>
+              <option value="7">Très grand</option>
+            </select>
+            <div style="display: flex; align-items: center; gap: 4px; font-size: 0.85rem;">
+              <span>Couleur:</span>
+              <input type="color" onchange="document.execCommand('foreColor', false, this.value)" style="width: 30px; height: 26px; padding: 0; border: 1px solid var(--border); background: transparent; cursor: pointer;" title="Couleur de police">
+            </div>
+            <div style="display: flex; align-items: center; gap: 4px; font-size: 0.85rem;">
+              <span>Surlignage:</span>
+              <input type="color" value="#fef08a" onchange="document.execCommand('hiliteColor', false, this.value)" style="width: 30px; height: 26px; padding: 0; border: 1px solid var(--border); background: transparent; cursor: pointer;" title="Surlignage">
+            </div>
+          </div>
+
           <div style="display: flex; flex-direction: column; gap: 10px; flex: 1; margin-bottom: 15px;">
-            <textarea id="edit-recette-realisation" placeholder="Décrivez les étapes de préparation..." style="width: 100%; height: 100%; flex: 1; min-height: 60vh; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 1rem; resize: none;"></textarea>
+            <div id="edit-recette-realisation" contenteditable="true" placeholder="Décrivez les étapes de préparation..." style="width: 100%; height: 100%; flex: 1; min-height: 60vh; padding: 12px; border: 1px solid var(--border); border-radius: 6px; font-family: inherit; font-size: 1rem; overflow-y: auto; background: white; outline: none;"></div>
           </div>
 
           <div style="display: flex; justify-content: flex-end; gap: 8px;">
             <button class="btn-primary" style="background: #64748b;" onclick="fermerModalEdition()">Annuler</button>
             <button class="btn-primary" onclick="sauvegarderEditionRecette()">Enregistrer</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Modale de modification exclusive du nom et de la catégorie -->
+      <div id="modal-edit-infos-recette" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 100; justify-content: center; align-items: center; padding: 10px;">
+        <div style="background: white; padding: 20px; width: 100%; max-width: 450px; border-radius: 8px; display: flex; flex-direction: column; gap: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);">
+          <input type="hidden" id="edit-info-recette-id">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 8px;">
+            <h3 style="margin: 0; color: var(--primary); font-size: 1.1rem;">Modifier la recette</h3>
+            <button class="btn-primary" style="background: #64748b; padding: 4px 8px; font-size: 0.8rem;" onclick="fermerModalInfosRecette()">Fermer ✕</button>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label style="font-size: 0.9rem; font-weight: 500;">Nom de la recette :</label>
+            <input type="text" id="edit-info-recette-nom" placeholder="Nom...">
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label style="font-size: 0.9rem; font-weight: 500;">Catégorie (Type) :</label>
+            <select id="edit-info-recette-type" onchange="gererChangementTypeModaleInfos()">
+              <!-- Les options seront injectées dynamiquement -->
+            </select>
+            <input type="text" id="edit-info-recette-nouveau-type" placeholder="Nouveau type..." style="display: none; margin-top: 4px;">
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+            <button class="btn-primary" style="background: #64748b;" onclick="fermerModalInfosRecette()">Annuler</button>
+            <button class="btn-primary" onclick="sauvegarderInfosRecette()">Enregistrer</button>
           </div>
         </div>
       </div>
@@ -553,7 +596,7 @@
   <script>
     
     const SUPABASE_URL = "https://ppyoygdxputwcrmdkpvm.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBweW95Z2R4cHV0d2NybWRrcHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNDM4NjAsImV4cCI6MjEwMjYxOTg2MH0.58sY1K5Edlg6pD_obyPkHdZV2yfNeQjWZLYhkGLOeJM";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBweW95Z2R4cHV0d2NybWRrcHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODtokMjEwMjYxOTg2MH0.58sY1K5Edlg6pD_obyPkHdZV2yfNeQjWZLYhkGLOeJM";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let listeRecettes = [];
@@ -798,7 +841,7 @@
             : '<em style="font-size:0.8rem; color:#94a3b8;">Aucun ingrédient</em>';
 
           const realisationHTML = r.realisation 
-            ? `<div style="margin-top: 6px; font-size: 0.9rem; background: var(--bg); padding: 8px; border-radius: 6px; white-space: pre-line;"><strong>Réalisation :</strong><br>${r.realisation}</div>`
+            ? `<div style="margin-top: 6px; font-size: 0.9rem; background: var(--bg); padding: 8px; border-radius: 6px;"><strong>Réalisation :</strong><br>${r.realisation}</div>`
             : '';
 
           return `
@@ -816,7 +859,7 @@
                   </div>
                 </details>
                 <div class="courses-actions" style="flex-shrink: 0; margin-left: 8px; display: flex; gap: 6px; align-items: center;">
-                  <button class="btn-action-icon" title="Réalisation de la recette" onclick="ouvrirModalEdition(${r.id}, '${r.nom.replace(/'/g, "\\'")}', '${(r.type || 'Plat').replace(/'/g, "\\'")}')">
+                  <button class="btn-action-icon" title="Réalisation de la recette (Étapes)" onclick="ouvrirModalEdition(${r.id}, '${r.nom.replace(/'/g, "\\'")}')">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
                       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
@@ -833,7 +876,7 @@
                       <line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line>
                     </svg>
                   </button>
-                  <button class="btn-action-icon" title="Modifier" onclick="ouvrirModalEdition(${r.id}, '${r.nom.replace(/'/g, "\\'")}', '${(r.type || 'Plat').replace(/'/g, "\\'")}')">✏️</button>
+                  <button class="btn-action-icon" title="Modifier le nom et la catégorie" onclick="ouvrirModalInfosRecette(${r.id}, '${r.nom.replace(/'/g, "\\'")}', '${(r.type || 'Plat').replace(/'/g, "\\'")}')">✏️</button>
 				  <button class="btn-action-icon" title="Supprimer" onclick="supprimerRecette(${r.id})">❌</button>
                 </div>
               </div>
@@ -1525,16 +1568,35 @@
       chargerPlanning();
     });
 	
-    function ouvrirModalEdition(id, nom, typeActuel) {
+    function ouvrirModalEdition(id, nom) {
       document.getElementById('edit-recette-id').value = id;
-      document.getElementById('edit-recette-nom').value = nom;
       document.getElementById('modal-recette-titre').textContent = nom;
 
       const recetteObj = listeRecettes.find(r => r.id === id);
-      document.getElementById('edit-recette-realisation').value = recetteObj && recetteObj.realisation ? recetteObj.realisation : '';
+      document.getElementById('edit-recette-realisation').innerHTML = recetteObj && recetteObj.realisation ? recetteObj.realisation : '';
 
-      const selectType = document.getElementById('edit-recette-type');
-      const inputNouveau = document.getElementById('edit-recette-nouveau-type');
+      document.getElementById('modal-edit-recette').style.display = 'flex';
+    }
+
+    function fermerModalEdition() {
+      document.getElementById('modal-edit-recette').style.display = 'none';
+    }
+
+    async function sauvegarderEditionRecette() {
+      const id = document.getElementById('edit-recette-id').value;
+      const nouvelleRealisation = document.getElementById('edit-recette-realisation').innerHTML.trim();
+
+      await _supabase.from('recettes').update({ realisation: nouvelleRealisation }).eq('id', id);
+      fermerModalEdition();
+      await chargerRecettes();
+    }
+
+    function ouvrirModalInfosRecette(id, nom, typeActuel) {
+      document.getElementById('edit-info-recette-id').value = id;
+      document.getElementById('edit-info-recette-nom').value = nom;
+
+      const selectType = document.getElementById('edit-info-recette-type');
+      const inputNouveau = document.getElementById('edit-info-recette-nouveau-type');
       inputNouveau.style.display = 'none';
       inputNouveau.value = '';
 
@@ -1548,15 +1610,16 @@
         selectType.value = typeActuel;
       } else {
         selectType.value = '__Nouveau__';
+        inputNouveau.style.display = 'block';
         inputNouveau.value = typeActuel;
       }
 
-      document.getElementById('modal-edit-recette').style.display = 'flex';
+      document.getElementById('modal-edit-infos-recette').style.display = 'flex';
     }
 
-    function gererChangementTypeEdition() {
-      const selectType = document.getElementById('edit-recette-type');
-      const inputNouveau = document.getElementById('edit-recette-nouveau-type');
+    function gererChangementTypeModaleInfos() {
+      const selectType = document.getElementById('edit-info-recette-type');
+      const inputNouveau = document.getElementById('edit-info-recette-nouveau-type');
       if (selectType.value === '__Nouveau__') {
         inputNouveau.style.display = 'block';
         inputNouveau.focus();
@@ -1566,16 +1629,15 @@
       }
     }
 
-    function fermerModalEdition() {
-      document.getElementById('modal-edit-recette').style.display = 'none';
+    function fermerModalInfosRecette() {
+      document.getElementById('modal-edit-infos-recette').style.display = 'none';
     }
 
-    async function sauvegarderEditionRecette() {
-      const id = document.getElementById('edit-recette-id').value;
-      const nouveauNom = document.getElementById('edit-recette-nom').value.trim();
-      const nouvelleRealisation = document.getElementById('edit-recette-realisation').value.trim();
-      const selectType = document.getElementById('edit-recette-type');
-      const inputNouveau = document.getElementById('edit-recette-nouveau-type');
+    async function sauvegarderInfosRecette() {
+      const id = document.getElementById('edit-info-recette-id').value;
+      const nouveauNom = document.getElementById('edit-info-recette-nom').value.trim();
+      const selectType = document.getElementById('edit-info-recette-type');
+      const inputNouveau = document.getElementById('edit-info-recette-nouveau-type');
 
       if (!nouveauNom) return;
 
@@ -1585,8 +1647,8 @@
         if (!nouveauType) return;
       }
 
-      await _supabase.from('recettes').update({ nom: nouveauNom, type: nouveauType, realisation: nouvelleRealisation }).eq('id', id);
-      fermerModalEdition();
+      await _supabase.from('recettes').update({ nom: nouveauNom, type: nouveauType }).eq('id', id);
+      fermerModalInfosRecette();
       await chargerRecettes();
     }
 
@@ -1640,7 +1702,7 @@
       lignesTableau += `</tr>`;
 
       lignesTableau += `<tr><th style="border: 1px solid var(--border); padding: 10px; background: #e2e8f0; text-align: center;">Goûter</th>`;
-      datesSemaine.forEach(dateStr => {
+      datesSemaine.dates.forEach ? null : datesSemaine.forEach(dateStr => {
         const gouter = getGouterContent(dateStr);
         lignesTableau += `<td style="border: 1px solid var(--border); padding: 10px; vertical-align: top; text-align: center;">${gouter}</td>`;
       });
