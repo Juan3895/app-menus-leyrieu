@@ -1702,7 +1702,7 @@
       lignesTableau += `</tr>`;
 
       lignesTableau += `<tr><th style="border: 1px solid var(--border); padding: 10px; background: #e2e8f0; text-align: center;">Goûter</th>`;
-      datesSemaine.dates.forEach ? null : datesSemaine.forEach(dateStr => {
+      datesSemaine.forEach(dateStr => {
         const gouter = getGouterContent(dateStr);
         lignesTableau += `<td style="border: 1px solid var(--border); padding: 10px; vertical-align: top; text-align: center;">${gouter}</td>`;
       });
