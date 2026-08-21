@@ -41,15 +41,24 @@
   header {
     background: var(--card-bg);
     border-bottom: 1px solid var(--border);
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
     position: relative;
   }
 
+  .header-logo {
+    height: 48px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 50%;
+  }
+
   header h1 {
-    font-size: 1.25rem;
+    font-size: 1.1rem;
+    line-height: 1.2;
+    text-align: center;
     margin: 0 auto;
     position: absolute;
     left: 50%;
@@ -67,7 +76,6 @@
     align-items: center;
     justify-content: center;
     transition: background-color 0.2s;
-    margin-left: auto;
     z-index: 5;
   }
   .btn-quitter:hover {
@@ -399,7 +407,8 @@
 <body>
 
   <header>
-    <h1>Les menus de Leyrieu</h1>
+    <img src="lolgo.png" alt="Logo" class="header-logo">
+    <h1>Les menus<br>de Leyrieu</h1>
     <button class="btn-quitter" onclick="quitterApplication()" title="Quitter">
       <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
         <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
@@ -1652,11 +1661,22 @@
       document.getElementById('modal-vue-semaine').style.display = 'none';
     }
 
-    function quitterApplication() {
+    async function quitterApplication() {
+      try {
+        // Si l'application tourne dans Capacitor sur Android/iOS
+        if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+          await window.Capacitor.Plugins.App.exitApp();
+          return;
+        }
+      } catch (e) {
+        console.warn("Fermeture native Capacitor non disponible", e);
+      }
+
+      // Solution de repli pour le navigateur web
       try {
         window.close();
       } catch (e) {
-        // Ignorer si la fermeture par script est bloquée par le navigateur
+        // Ignorer si bloqué
       }
       window.location.href = "about:blank";
     }
