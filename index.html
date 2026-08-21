@@ -551,7 +551,7 @@
   <script>
     
     const SUPABASE_URL = "https://ppyoygdxputwcrmdkpvm.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBweW95Z2R4cHV0d2NybWRrcHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNDM4NjAsImV4cCI6MjEwMjYxOTg2MH0.58sY1K5Edlg6pD_obyPkHdZV2yfNeQjWZLYhkGLOeJM";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBweW95Z2R4cHV0d2NybWRrcHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODtokzM4NjAsImV4cCI6MjEwMjYxOTg2MH0.58sY1K5Edlg6pD_obyPkHdZV2yfNeQjWZLYhkGLOeJM";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let listeRecettes = [];
@@ -1056,15 +1056,22 @@
         detailsOuverts.add(el.getAttribute('data-id'));
       });
 
+      // Mémoriser également l'état d'ouverture des jours
+      const joursOuverts = new Set();
+      cal.querySelectorAll('details.jour-details[open]').forEach((el, index) => {
+        joursOuverts.add(index);
+      });
+
       let html = '';
       const joursNoms = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
       datesSemaine.forEach((dateStr, idx) => {
         const dateObj = new Date(dateStr);
         const dateAffichee = `${joursNoms[idx]} ${dateObj.getDate()}/${dateObj.getMonth() + 1}`;
+        const isJourOpen = joursOuverts.has(idx) ? 'open' : '';
 
         html += `
-          <details class="jour-details">
+          <details class="jour-details" ${isJourOpen}>
             <summary class="jour-summary">
               <span>${dateAffichee}</span>
             </summary>
