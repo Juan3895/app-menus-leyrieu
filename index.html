@@ -1164,7 +1164,7 @@
     }
 
     function optionsRecettesHTML(selectedId) {
-      // 1. Calculer la dernière réalisation pour chaque recette
+      // 1. Calculer la dernière réalisation pour chaque recette (gardé en interne si besoin)
       const derniereRealisationParRecette = {};
       planningData.forEach(p => {
         if (p.recette_id && p.date) {
@@ -1190,14 +1190,9 @@
         options += `<optgroup label="📂 --- ${type.toUpperCase()} ---">`;
         options += recettesDuType.map(r => {
           const nomEchape = r.nom.replace(/"/g, '&quot;');
-          const dateBrute = derniereRealisationParRecette[r.id]; // Ex: 2026-08-17
           
-          let texteOption = r.nom;
-          if (dateBrute) {
-            const parts = dateBrute.split('-');
-            const dateFormatee = `${parts[2]}/${parts[1]}/${parts[0]}`;
-            texteOption = `${r.nom} (${dateFormatee})`;
-          }
+          // Seul le nom de la recette est affiché à l'intérieur de l'option pour l'onglet planning
+          const texteOption = r.nom;
           
           return `<option value="${r.id}" label="${nomEchape}" ${r.id == selectedId ? 'selected' : ''}>${texteOption}</option>`;
         }).join('');
