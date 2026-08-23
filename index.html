@@ -1199,7 +1199,7 @@
             texteOption += ` (${jour}/${mois}/${annee})`;
           }
           
-          return `<option value="${r.id}" ${r.id == selectedId ? 'selected' : ''}>${r.nom}</option>`;
+          return `<option value="${r.id}" ${r.id == selectedId ? 'selected' : ''}>${texteOption}</option>`;
         }).join('');
         options += `</optgroup>`;
       });
