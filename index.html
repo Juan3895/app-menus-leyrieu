@@ -1040,7 +1040,11 @@
       for (let i = 0; i < 7; i++) {
         const d = new Date(lundi);
         d.setDate(lundi.getDate() + i);
-        dates.push(d.toISOString().split('T')[0]);
+        // Utilisation de la date locale au format YYYY-MM-DD sans décalage UTC
+        const annee = d.getFullYear();
+        const mois = String(d.getMonth() + 1).padStart(2, '0');
+        const jour = String(d.getDate()).padStart(2, '0');
+        dates.push(`${annee}-${mois}-${jour}`);
       }
       return dates;
     }
@@ -1061,8 +1065,8 @@
       }
 
       const datesSemaine = getDatesSemaineAffichee();
-      const dateDebut = new Date(datesSemaine[0]);
-      const dateFin = new Date(datesSemaine[6]);
+      const dateDebut = new Date(datesSemaine[0] + 'T00:00:00');
+      const dateFin = new Date(datesSemaine[6] + 'T00:00:00');
       const formatDate = d => `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
       
       const titreEl = document.getElementById('titre-semaine');
@@ -1141,7 +1145,7 @@
       const joursNoms = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'];
 
       datesSemaine.forEach((dateStr, idx) => {
-        const dateObj = new Date(dateStr);
+        const dateObj = new Date(dateStr + 'T00:00:00');
         const dateAffichee = `${joursNoms[idx]} ${dateObj.getDate()}/${dateObj.getMonth() + 1}`;
         const isOpen = detailsOuverts.has(dateStr) ? 'open' : '';
 
@@ -1401,11 +1405,14 @@
 
       const semainesMap = {};
       (planningRepas || []).forEach(item => {
-        const d = new Date(item.date);
+        const d = new Date(item.date + 'T00:00:00');
         const jour = d.getDay() === 0 ? 7 : d.getDay();
         const lundi = new Date(d);
         lundi.setDate(d.getDate() - (jour - 1));
-        const lundiKey = lundi.toISOString().split('T')[0];
+        const annee = lundi.getFullYear();
+        const mois = String(lundi.getMonth() + 1).padStart(2, '0');
+        const jourLundi = String(lundi.getDate()).padStart(2, '0');
+        const lundiKey = `${annee}-${mois}-${jourLundi}`;
 
         if (!semainesMap[lundiKey]) semainesMap[lundiKey] = { lundi: lundi, ingredients: [] };
         if (item.recette_id && ingredientsByRecette[item.recette_id]) {
@@ -1415,7 +1422,7 @@
 
       (modifsData || []).forEach(m => {
         if (m.est_extra && !semainesMap[m.lundi_key]) {
-          semainesMap[m.lundi_key] = { lundi: new Date(m.lundi_key), ingredients: [] };
+          semainesMap[m.lundi_key] = { lundi: new Date(m.lundi_key + 'T00:00:00'), ingredients: [] };
         }
       });
 
@@ -1436,7 +1443,10 @@
           const jour = aujourdhui.getDay() === 0 ? 7 : aujourdhui.getDay();
           const lundiActuel = new Date(aujourdhui);
           lundiActuel.setDate(aujourdhui.getDate() - (jour - 1));
-          const keyActuel = lundiActuel.toISOString().split('T')[0];
+          const annee = lundiActuel.getFullYear();
+          const mois = String(lundiActuel.getMonth() + 1).padStart(2, '0');
+          const jourLundi = String(lundiActuel.getDate()).padStart(2, '0');
+          const keyActuel = `${annee}-${mois}-${jourLundi}`;
           const dimActuel = new Date(lundiActuel);
           dimActuel.setDate(lundiActuel.getDate() + 6);
           selectExtra.innerHTML = `<option value="${keyActuel}">Semaine du ${fmt(lundiActuel)} au ${fmt(dimActuel)}</option>`;
@@ -1739,7 +1749,7 @@
 
       let colonnesHeader = '';
       datesSemaine.forEach((dateStr, idx) => {
-        const d = new Date(dateStr);
+        const d = new Date(dateStr + 'T00:00:00');
         const dateFmt = `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
         colonnesHeader += `<th style="border: 1px solid var(--border); padding: 10px; background: #e2e8f0; text-align: center;">${joursNoms[idx]}<br><span style="font-weight: normal; font-size: 0.85rem;">${dateFmt}</span></th>`;
       });
@@ -1781,7 +1791,7 @@
       lignesTableau += `</tr>`;
 
       lignesTableau += `<tr><th style="border: 1px solid var(--border); padding: 10px; background: #e2e8f0; text-align: center;">Goûter</th>`;
-      datesSemaine.forEach(dateStr => {
+      datesSemaine.datesSemaine?.forEach?.(dateStr => {}) || datesSemaine.forEach(dateStr => {
         const gouter = getGouterContent(dateStr);
         lignesTableau += `<td style="border: 1px solid var(--border); padding: 10px; vertical-align: top; text-align: center;">${gouter}</td>`;
       });
