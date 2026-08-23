@@ -1164,7 +1164,6 @@
     }
 
     function optionsRecettesHTML(selectedId) {
-      // 1. Calculer la dernière réalisation pour chaque recette
       const derniereRealisationParRecette = {};
       planningData.forEach(p => {
         if (p.recette_id && p.date) {
@@ -1189,7 +1188,6 @@
         const recettesDuType = recettesParType[type].sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
         options += `<optgroup label="📂 --- ${type.toUpperCase()} ---">`;
         options += recettesDuType.map(r => {
-          // Formatage de la date de dernière réalisation (JJ/MM/AAAA) si elle existe
           let texteOption = r.nom;
           const derniereDate = derniereRealisationParRecette[r.id];
           if (derniereDate) {
@@ -1197,7 +1195,7 @@
             texteOption += ` (${jour}/${mois}/${annee})`;
           }
           
-          return `<option value="${r.id}" ${r.id == selectedId ? 'selected' : ''}>${texteOption}</option>`;
+          return `<option value="${r.id}" ${r.id == selectedId ? 'selected' : ''}>${r.nom}</option>`;
         }).join('');
         options += `</optgroup>`;
       });
