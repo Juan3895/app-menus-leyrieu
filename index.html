@@ -613,7 +613,7 @@
   <script>
     
     const SUPABASE_URL = "https://ppyoygdxputwcrmdkpvm.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBweW95Z2R4cHV0d2NybWRrcHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNDM4NjAsImV4cCI6MjEwMjYxOTg2MH0.58sY1K5Edlg6pD_obyPkHdZV2yfNeQjWZLYhkGLOeJM";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBweW95Z2R4cHV0d2NybWRrcHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODtokzM4NjAsImV4cCI6MjEwMjYxOTg2MH0.58sY1K5Edlg6pD_obyPkHdZV2yfNeQjWZLYhkGLOeJM";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let listeRecettes = [];
@@ -1192,16 +1192,14 @@
           const nomEchape = r.nom.replace(/"/g, '&quot;');
           const dateBrute = derniereRealisationParRecette[r.id]; // Ex: 2026-08-17
           
-          let attributTitle = "";
+          let texteOption = r.nom;
           if (dateBrute) {
-            // Découpage de la date : [2026, 08, 17]
             const parts = dateBrute.split('-');
-            // Reformatage : 17/08/2026
             const dateFormatee = `${parts[2]}/${parts[1]}/${parts[0]}`;
-            attributTitle = `title="Dernière réalisation : ${dateFormatee}"`;
+            texteOption = `${r.nom} (${dateFormatee})`;
           }
           
-          return `<option value="${r.id}" data-short="${nomEchape}" ${r.id == selectedId ? 'selected' : ''} ${attributTitle}>${r.nom}</option>`;
+          return `<option value="${r.id}" data-short="${nomEchape}" ${r.id == selectedId ? 'selected' : ''}>${texteOption}</option>`;
         }).join('');
         options += `</optgroup>`;
       });
