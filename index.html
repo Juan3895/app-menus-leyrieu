@@ -1192,14 +1192,18 @@
         const recettesDuType = recettesParType[type].sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
         options += `<optgroup label="📂 --- ${type.toUpperCase()} ---">`;
         options += recettesDuType.map(r => {
+          // On garde uniquement le nom de la recette pour l'affichage de l'option
           let texteOption = r.nom;
+          
+          // Optionnel : si vous souhaitez garder l'info de la date sans qu'elle ne pollue 
+          // le champ sélectionné, vous pouvez l'ajouter via un attribut 'data-' ou l'omettre.
           const derniereDate = derniereRealisationParRecette[r.id];
+          let dataDateAttr = '';
           if (derniereDate) {
-            const [annee, mois, jour] = derniereDate.split('-');
-            texteOption += ` (${jour}/${mois}/${annee})`;
+            dataDateAttr = ` data-derniere-date="${derniereDate}"`;
           }
           
-          return `<option value="${r.id}" ${r.id == selectedId ? 'selected' : ''}>${texteOption}</option>`;
+          return `<option value="${r.id}"${dataDateAttr} ${r.id == selectedId ? 'selected' : ''}>${texteOption}</option>`;
         }).join('');
         options += `</optgroup>`;
       });
