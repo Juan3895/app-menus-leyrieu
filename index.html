@@ -1040,7 +1040,6 @@
       for (let i = 0; i < 7; i++) {
         const d = new Date(lundi);
         d.setDate(lundi.getDate() + i);
-        // Utilisation de la date locale au format YYYY-MM-DD sans décalage UTC
         const annee = d.getFullYear();
         const mois = String(d.getMonth() + 1).padStart(2, '0');
         const jour = String(d.getDate()).padStart(2, '0');
@@ -1192,11 +1191,7 @@
         const recettesDuType = recettesParType[type].sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
         options += `<optgroup label="📂 --- ${type.toUpperCase()} ---">`;
         options += recettesDuType.map(r => {
-          // On garde uniquement le nom de la recette pour l'affichage de l'option
           let texteOption = r.nom;
-          
-          // Optionnel : si vous souhaitez garder l'info de la date sans qu'elle ne pollue 
-          // le champ sélectionné, vous pouvez l'ajouter via un attribut 'data-' ou l'omettre.
           const derniereDate = derniereRealisationParRecette[r.id];
           let dataDateAttr = '';
           if (derniereDate) {
@@ -1681,7 +1676,7 @@
         img.src = e.target.result;
       };
       reader.readAsDataURL(file);
-      event.target.value = ''; // Réinitialisation de l'input file
+      event.target.value = '';
     }
 
     function ouvrirModalInfosRecette(id, nom, typeActuel) {
@@ -1795,7 +1790,7 @@
       lignesTableau += `</tr>`;
 
       lignesTableau += `<tr><th style="border: 1px solid var(--border); padding: 10px; background: #e2e8f0; text-align: center;">Goûter</th>`;
-      datesSemaine.datesSemaine?.forEach?.(dateStr => {}) || datesSemaine.forEach(dateStr => {
+      datesSemaine.forEach(dateStr => {
         const gouter = getGouterContent(dateStr);
         lignesTableau += `<td style="border: 1px solid var(--border); padding: 10px; vertical-align: top; text-align: center;">${gouter}</td>`;
       });
