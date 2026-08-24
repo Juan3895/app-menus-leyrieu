@@ -171,6 +171,7 @@
   .repas-grid select {
     font-size: 0.82rem;
     padding: 4px 6px;
+    font-family: monospace; /* Permet un meilleur alignement des colonnes texte */
   }
 
   /* Styles de fond dynamique pour les sélecteurs principaux */
@@ -186,6 +187,7 @@
   select option {
     background-color: #ffffff;
     color: var(--text);
+    font-family: monospace;
   }
 
   ul { list-style: none; padding: 0; margin: 0; }
@@ -613,7 +615,7 @@
   <script>
     
     const SUPABASE_URL = "https://ppyoygdxputwcrmdkpvm.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBweW95Z2R4cHV0d2NybWRrcHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNDM4NjAsImV4cCI6MjEwMjYxOTg2MH0.58sY1K5Edlg6pD_obyPkHdZV2yfNeQjWZLYhkGLOeJM";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBweW95Z2R4cHV0d2NybWRrcHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODtokzAxMzg2MCwiZXhwIjoyMTAyNjE5ODYwf0.58sY1K5Edlg6pD_obyPkHdZV2yfNeQjWZLYhkGLOeJM";
     const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let listeRecettes = [];
@@ -1164,6 +1166,7 @@
     }
 
     function optionsRecettesHTML(selectedId) {
+      // 1. Calculer la dernière réalisation pour chaque recette
       const derniereRealisationParRecette = {};
       planningData.forEach(p => {
         if (p.recette_id && p.date) {
@@ -1188,17 +1191,19 @@
         const recettesDuType = recettesParType[type].sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
         options += `<optgroup label="📂 --- ${type.toUpperCase()} ---">`;
         options += recettesDuType.map(r => {
-          const dateBrute = derniereRealisationParRecette[r.id];
+          const nomEchape = r.nom.replace(/"/g, '&quot;');
+          const dateBrute = derniereRealisationParRecette[r.id]; 
           
-          let suffixeDate = "";
+          let dateFormatee = "Jamais";
           if (dateBrute) {
             const parts = dateBrute.split('-');
-            const dateFormatee = `${parts[2]}/${parts[1]}/${parts[0]}`;
-            suffixeDate = ` (${dateFormatee})`;
+            dateFormatee = `${parts[2]}/${parts[1]}/${parts[0]}`;
           }
           
-          // On ajoute data-nom pour garder le nom pur, et on met le nom + date pour le texte visible dans le menu déroulant
-          return `<option value="${r.id}" data-nom="${r.nom.replace(/"/g, '&quot;')}" ${r.id == selectedId ? 'selected' : ''}>${r.nom}${suffixeDate}</option>`;
+          // Formatage sur 2 colonnes visuelles (Nom + Date de dernière réalisation)
+          const texteOption = `${r.nom.padEnd(28, ' ')} | 📅 ${dateFormatee}`;
+          
+          return `<option value="${r.id}" data-short="${nomEchape}" ${r.id == selectedId ? 'selected' : ''}>${texteOption}</option>`;
         }).join('');
         options += `</optgroup>`;
       });
@@ -1206,18 +1211,6 @@
       return options;
     }
 
-
-    function nettoyerAffichageSelects() {
-      document.querySelectorAll('.repas-grid select').forEach(select => {
-        const selectedOption = select.options[select.selectedIndex];
-        if (selectedOption && selectedOption.dataset.nom) {
-          // Astuce : les selects natifs affichent le textNode de l'option. 
-          // Si on veut masquer la date sur l'élément fermé, le plus simple est de modifier l'affichage 
-          // ou d'utiliser un span par-dessus, mais le comportement standard des selects affichera toujours le texte de l'option.
-        }
-      });
-    }
-    
     function colonneRepasHTML(dateStr, creneau, typeElement, titreColonne, emoji) {
       let lignesChamp = planningData.filter(p => p.date === dateStr && p.creneau === creneau && p.type_element === typeElement);
       if (lignesChamp.length === 0) {
