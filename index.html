@@ -26,6 +26,14 @@
     --card-bg: #ffffff;
     --text: #1e293b;
     --border: #e2e8f0;
+  
+/* 🔤 OPTION DE MODIFICATION DE LA POLICE GLOBALEMENT */
+    --app-font: system-ui, -apple-system, sans-serif; 
+    /* Exemples alternatifs que vous pouvez mettre ici :
+       - 'Georgia', serif
+       - 'Courier New', monospace
+       - 'Arial', sans-serif
+    */
   }
 
   * { box-sizing: border-box; }
@@ -166,12 +174,16 @@
     border-radius: 6px;
     width: 100%;
   }
+/* Uniformisation de la police dans TOUTES les listes déroulantes et le planning */
+  select, select option {
+    font-family: var(--app-font) !important;
+  }
 
   /* Style compact pour les sélecteurs de l'onglet planning */
   .repas-grid select {
     font-size: 0.82rem;
     padding: 4px 6px;
-    font-family: monospace; /* Permet un meilleur alignement des colonnes texte */
+    font-family: var(--app-font) !important; /* Uniformisé ici aussi */
   }
 
   /* Styles de fond dynamique pour les sélecteurs principaux */
@@ -450,6 +462,9 @@
 
     <!-- SECTION RECETTES -->
     <section id="sec-recettes" class="section">
+      <div class="card" style="padding: 10px 16px;">
+  <input type="text" id="input-recherche-recette" placeholder="🔍 Filtrer mes recettes..." oninput="filtrerRecettes(this.value)">
+</div>
       <div class="card">
         <h3>Ajouter une recette</h3>
         <div style="display: flex; flex-direction: column; gap: 8px;">
@@ -573,6 +588,8 @@
       </div>
     </section>
 
+
+    
     <!-- SECTION COURSES -->
     <section id="sec-courses" class="section">
       <div class="card">
@@ -625,6 +642,70 @@
     let presenceData = [];
     let decalageSemaine = 0;
     let promiseSauvegardeEnCours = Promise.resolve();
+
+
+    
+    let historiquePlanningGlobal = []; // <-- Ajouté pour stocker tout l'historique
+    
+    function filtrerRecettes(texte) {
+  const filtre = texte.toLowerCase().trim();
+  
+  // On cible toutes les lignes de recettes (les <li>) à l'intérieur de la section recettes
+  const itemsRecettes = document.querySelectorAll('#sec-recettes li');
+  
+  itemsRecettes.forEach(li => {
+    // On s'assure qu'on ne traite que les li qui contiennent une recette (qui ont un attribut ou un contenu de texte pertinent)
+    const texteLi = li.textContent.toLowerCase();
+    
+    // On vérifie si le texte de la recette correspond au filtre
+    if (texteLi.includes(filtre)) {
+      li.style.display = '';
+    } else {
+      li.style.display = 'none';
+    }
+  });
+
+  // Gestion de l'affichage des en-têtes de catégories (les h4) si toutes les recettes de la catégorie sont masquées
+  const listesRecettes = document.querySelectorAll('#sec-recettes .card:last-of-type ul');
+  listesRecettes.forEach(ul => {
+    const titreHeader = ul.previousElementSibling;
+    const itemsVisibles = Array.from(ul.querySelectorAll('li')).filter(li => li.style.display !== 'none');
+    
+    if (titreHeader && titreHeader.tagName === 'H4') {
+      titreHeader.style.display = itemsVisibles.length > 0 ? '' : 'none';
+    }
+  });
+}
+
+function filtrerOptionsSelect(inputElement, selectId) {
+  const filtre = inputElement.value.toLowerCase().trim();
+  const select = document.getElementById(selectId);
+  if (!select) return;
+
+  const options = select.querySelectorAll('option');
+  let premierVisible = null;
+
+  options.forEach((opt, index) => {
+    if (index === 0) return; // Garder l'option "-- Aucun --" toujours visible
+    const texte = opt.textContent.toLowerCase();
+    if (texte.includes(filtre)) {
+      opt.style.display = '';
+      if (!premierVisible) premierVisible = opt;
+    } else {
+      opt.style.display = 'none';
+    }
+  });
+
+  // Si un filtre est actif et qu'on trouve des correspondances, on peut pré-sélectionner la première option visible pour faciliter la saisie rapide
+  if (filtre !== '' && premierVisible) {
+    select.value = premierVisible.value;
+    mettreAJourCouleurSelects();
+    if (typeof tronquerAffichageSelection === 'function') {
+      tronquerAffichageSelection(select);
+    }
+  }
+}
+
 
     const coulerusParDefaut = {'Entrée': '#ffff00', 'Plat': '#00ff00', 'Viande': '#ff7675', 'Accompagnement': '#0000ff', 'Dessert': '#ff00ff'};
 
@@ -1065,29 +1146,33 @@
     }
 
     async function chargerPlanning() {
-      if (listePersonnes.length === 0) {
-        const { data: pDataPerso } = await _supabase.from('personnes').select('*').order('prenom');
-        listePersonnes = pDataPerso || [];
-      }
-      if (listeRecettes.length === 0) {
-        const { data: recettesData } = await _supabase.from('recettes').select('*').order('type').order('nom');
-        listeRecettes = recettesData || [];
-      }
+  if (listePersonnes.length === 0) {
+    const { data: pDataPerso } = await _supabase.from('personnes').select('*').order('prenom');
+    listePersonnes = pDataPerso || [];
+  }
+  if (listeRecettes.length === 0) {
+    const { data: recettesData } = await _supabase.from('recettes').select('*').order('type').order('nom');
+    listeRecettes = recettesData || [];
+  }
 
-      const datesSemaine = getDatesSemaineAffichee();
-      const dateDebut = new Date(datesSemaine[0]);
-      const dateFin = new Date(datesSemaine[6]);
-      const formatDate = d => `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
-      
-      const titreEl = document.getElementById('titre-semaine');
-      if (titreEl) {
-        titreEl.innerHTML = decalageSemaine === 0 
-          ? `Cette semaine<br><small style="color:#64748b;">(${formatDate(dateDebut)} - ${formatDate(dateFin)})</small>`
-          : `Semaine du ${formatDate(dateDebut)} au ${formatDate(dateFin)}`;
-      }
+  // Charger TOUT l'historique du planning pour les dates de dernière réalisation
+  const { data: histData } = await _supabase.from('planning').select('date, recette_id').not('recette_id', 'is', null);
+  historiquePlanningGlobal = histData || [];
 
-      const { data: pData } = await _supabase.from('planning').select('*').in('date', datesSemaine);
-      planningData = pData || [];
+  const datesSemaine = getDatesSemaineAffichee();
+  const dateDebut = new Date(datesSemaine[0]);
+  const dateFin = new Date(datesSemaine[6]);
+  const formatDate = d => `${d.getDate().toString().padStart(2, '0')}/${(d.getMonth() + 1).toString().padStart(2, '0')}`;
+  
+  const titreEl = document.getElementById('titre-semaine');
+  if (titreEl) {
+    titreEl.innerHTML = decalageSemaine === 0 
+      ? `Cette semaine<br><small style="color:#64748b;">(${formatDate(dateDebut)} - ${formatDate(dateFin)})</small>`
+      : `Semaine du ${formatDate(dateDebut)} au ${formatDate(dateFin)}`;
+  }
+
+  const { data: pData } = await _supabase.from('planning').select('*').in('date', datesSemaine);
+  planningData = pData || [];
 
       let modificationFaite = false;
       for (const dateStr of datesSemaine) {
@@ -1175,27 +1260,31 @@
 
       cal.innerHTML = html;
       mettreAJourCouleurSelects();
+      
+      // Correction : Appliquer systématiquement la troncature sur tous les sélecteurs peu importe la semaine
       cal.querySelectorAll('select').forEach(sel => {
         if (sel.value) tronquerAffichageSelection(sel);
       });
     }
 
     function optionsRecettesHTML(selectedId) {
-      const derniereRealisationParRecette = {};
-      planningData.forEach(p => {
-        if (p.recette_id && p.date) {
-          if (!derniereRealisationParRecette[p.recette_id] || p.date > derniereRealisationParRecette[p.recette_id]) {
-            derniereRealisationParRecette[p.recette_id] = p.date;
-          }
-        }
-      });
+  const derniereRealisationParRecette = {};
+  
+  // Utilisation de l'historique global de tous les plannings
+  historiquePlanningGlobal.forEach(p => {
+    if (p.recette_id && p.date) {
+      if (!derniereRealisationParRecette[p.recette_id] || p.date > derniereRealisationParRecette[p.recette_id]) {
+        derniereRealisationParRecette[p.recette_id] = p.date;
+      }
+    }
+  });
 
-      const recettesParType = {};
-      listeRecettes.forEach(r => {
-        const type = r.type || 'Plat';
-        if (!recettesParType[type]) recettesParType[type] = [];
-        recettesParType[type].push(r);
-      });
+  const recettesParType = {};
+  listeRecettes.forEach(r => {
+    const type = r.type || 'Plat';
+    if (!recettesParType[type]) recettesParType[type] = [];
+    recettesParType[type].push(r);
+  });
 
       const baseTypes = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"];
       const typesExistants = Object.keys(recettesParType);
@@ -1225,9 +1314,7 @@
             dateFormatee = ` (${parts[2]}/${parts[1]}/${parts[0]})`;
           }
           
-          const texteOption = isSelected ? r.nom : `${r.nom.padEnd(28, ' ')}${dateFormatee}`;
-          
-          return `<option value="${r.id}" data-short="${nomEchape}" ${isSelected ? 'selected' : ''}>${texteOption}</option>`;
+          return `<option value="${r.id}" data-short="${nomEchape}" ${isSelected ? 'selected' : ''}>${r.nom}${dateFormatee}</option>`;
         }).join('');
         options += `</optgroup>`;
       });
@@ -1245,42 +1332,50 @@
     }
 
     function colonneRepasHTML(dateStr, creneau, typeElement, titreColonne, emoji) {
-      let lignesChamp = planningData.filter(p => p.date === dateStr && p.creneau === creneau && p.type_element === typeElement);
-      if (lignesChamp.length === 0) {
-        lignesChamp = [{ id: null, recette_id: null, type_element: typeElement }];
-      }
+  let lignesChamp = planningData.filter(p => p.date === dateStr && p.creneau === creneau && p.type_element === typeElement);
+  if (lignesChamp.length === 0) {
+    lignesChamp = [{ id: null, recette_id: null, type_element: typeElement }];
+  }
 
-      let itemsHtml = lignesChamp.map(rep => {
-        const val = rep.recette_id || '';
-        const repId = rep.id || 'null';
-        return `
-          <div class="repas-line-item">
-            <select onchange="changerRepasIndependant('${dateStr}', '${creneau}', '${typeElement}', ${repId === 'null' ? null : repId}, this.value, this); tronquerAffichageSelection(this);" style="flex: 1;" data-init-select>
-              ${optionsRecettesHTML(val)}
-            </select>
-            
-            <button class="btn-primary" style="padding: 4px 5px; font-size: 0.7rem; background-color: #16a34a;" onclick="ajouterLigneChamp('${dateStr}', '${creneau}', '${typeElement}')" title="Ajouter">+</button>
-            ${lignesChamp.length > 1 && repId !== 'null' ? `<button class="btn-primary" style="padding: 4px 5px; font-size: 0.7rem; background-color: #dc2626;" onclick="supprimerLigneChamp(${repId})" title="Supprimer">-</button>` : ''}
-          </div>
-        `;
-      }).join('');
+  let itemsHtml = lignesChamp.map((rep, index) => {
+    const val = rep.recette_id || '';
+    const repId = rep.id || 'null';
+    const uniqueSelectId = `select-${dateStr}-${creneau}-${typeElement}-${index}-${repId}`;
+    const uniqueInputId = `input-search-${dateStr}-${creneau}-${typeElement}-${index}-${repId}`;
 
-      return `
-        <div class="repas-column">
-          <div class="repas-column-header">
-            <span>${emoji} ${titreColonne}</span>
-          </div>
-          ${itemsHtml}
+    return `
+      <div class="repas-line-item" style="flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 6px;">
+        <!-- Barre de recherche rapide pour ce menu déroulant -->
+        <input type="text" id="${uniqueInputId}" placeholder="🔍 Filtrer..." oninput="filtrerOptionsSelect(this, '${uniqueSelectId}')" style="font-size: 0.75rem; padding: 3px 6px; background: #fff;">
+        
+        <div style="display: flex; gap: 4px; align-items: center;">
+          <select id="${uniqueSelectId}" onchange="changerRepasIndependant('${dateStr}', '${creneau}', '${typeElement}', ${repId === 'null' ? null : repId}, this.value, this); tronquerAffichageSelection(this);" style="flex: 1;" data-init-select>
+            ${optionsRecettesHTML(val)}
+          </select>
+          
+          <button class="btn-primary" style="padding: 4px 5px; font-size: 0.7rem; background-color: #16a34a;" onclick="ajouterLigneChamp('${dateStr}', '${creneau}', '${typeElement}')" title="Ajouter">+</button>
+          ${lignesChamp.length > 1 && repId !== 'null' ? `<button class="btn-primary" style="padding: 4px 5px; font-size: 0.7rem; background-color: #dc2626;" onclick="supprimerLigneChamp(${repId})" title="Supprimer">-</button>` : ''}
         </div>
-      `;
-    }
+      </div>
+    `;
+  }).join('');
+
+  return `
+    <div class="repas-column">
+      <div class="repas-column-header">
+        <span>${emoji} ${titreColonne}</span>
+      </div>
+      ${itemsHtml}
+    </div>
+  `;
+}
 
     function creneauHTML(dateStr, creneau, detailsOuverts) {
       const detailsKey = `${dateStr}_${creneau}`;
       const isOpen = detailsOuverts && detailsOuverts.has(detailsKey) ? 'open' : '';
 
       if (creneau === 'gouter') {
-        const repGouterList = planningData.filter(p => p.date === dateStr && p.creneau === 'gouter');
+        let repGouterList = planningData.filter(p => p.date === dateStr && p.creneau === 'gouter');
         if (repGouterList.length === 0) {
           repGouterList.push({ id: null, recette_id: null, type_element: 'plat' });
         }
@@ -1288,17 +1383,25 @@
         let gouterColumnsHTML = repGouterList.map((rep, index) => {
           const val = rep.recette_id || '';
           const repId = rep.id || 'null';
+          const uniqueSelectId = `select-${dateStr}-gouter-plat-${index}-${repId}`;
+          const uniqueInputId = `input-search-${dateStr}-gouter-plat-${index}-${repId}`;
+
           return `
             <div class="repas-column">
               <div class="repas-column-header">
                 <span>🍰 Goûter ${repGouterList.length > 1 ? (index + 1) : ''}</span>
               </div>
-              <div class="repas-line-item">
-                <select onchange="changerRepasIndependant('${dateStr}', 'gouter', 'plat', ${repId === 'null' ? null : repId}, this.value, this)" style="flex: 1;">
-                  ${optionsRecettesHTML(val)}
-                </select>
-                <button class="btn-primary" style="padding: 4px 5px; font-size: 0.7rem; background-color: #16a34a;" onclick="ajouterLigneChamp('${dateStr}', 'gouter', 'plat')" title="Ajouter">+</button>
-                ${repGouterList.length > 1 && repId !== 'null' ? `<button class="btn-primary" style="padding: 4px 5px; font-size: 0.7rem; background-color: #dc2626;" onclick="supprimerLigneChamp(${repId})" title="Supprimer">-</button>` : ''}
+              <div class="repas-line-item" style="flex-direction: column; align-items: stretch; gap: 4px;">
+                <!-- Barre de recherche rapide pour le goûter -->
+                <input type="text" id="${uniqueInputId}" placeholder="🔍 Filtrer..." oninput="filtrerOptionsSelect(this, '${uniqueSelectId}')" style="font-size: 0.75rem; padding: 3px 6px; background: #fff;">
+                
+                <div style="display: flex; gap: 4px; align-items: center;">
+                  <select id="${uniqueSelectId}" onchange="changerRepasIndependant('${dateStr}', 'gouter', 'plat', ${repId === 'null' ? null : repId}, this.value, this); if(typeof tronquerAffichageSelection === 'function') tronquerAffichageSelection(this);" style="flex: 1;" data-init-select>
+                    ${optionsRecettesHTML(val)}
+                  </select>
+                  <button class="btn-primary" style="padding: 4px 5px; font-size: 0.7rem; background-color: #16a34a;" onclick="ajouterLigneChamp('${dateStr}', 'gouter', 'plat')" title="Ajouter">+</button>
+                  ${repGouterList.length > 1 && repId !== 'null' ? `<button class="btn-primary" style="padding: 4px 5px; font-size: 0.7rem; background-color: #dc2626;" onclick="supprimerLigneChamp(${repId})" title="Supprimer">-</button>` : ''}
+                </div>
               </div>
             </div>
           `;
