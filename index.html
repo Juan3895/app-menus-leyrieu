@@ -270,7 +270,7 @@
   @media (max-width: 900px) {
     .repas-grid { grid-template-columns: repeat(2, 1fr); }
   }
-  @media (max-width: 600px) {
+  @media (max-width: 450px) {
     .repas-grid { grid-template-columns: 1fr; }
   }
   
@@ -458,6 +458,7 @@
             <select id="select-type-recette" onchange="gererChangementTypeRecette()" style="flex: 1; min-width: 150px;">
               <option value="Entrée">🥗 Entrée</option>
               <option value="Plat" selected>🍲 Plat</option>
+              <option value="Viande">🥩 Viande</option>
               <option value="Accompagnement">🍟 Accompagnement</option>
               <option value="Dessert">🍰 Dessert</option>
               <option value="__Nouveau__">+ Créer un nouveau type...</option>
@@ -625,7 +626,7 @@
     let decalageSemaine = 0;
     let promiseSauvegardeEnCours = Promise.resolve();
 
-    const coulerusParDefaut = {'Entrée': '#ffff00', 'Plat': '#00ff00', 'Accompagnement': '#0000ff', 'Dessert': '#ff00ff'};
+    const coulerusParDefaut = {'Entrée': '#ffff00', 'Plat': '#00ff00', 'Viande': '#ff7675', 'Accompagnement': '#0000ff', 'Dessert': '#ff00ff'};
 
     function obtenirCouleursCategories() {
       const recup = localStorage.getItem('couleurs_categories');
@@ -761,17 +762,25 @@
       const select = document.getElementById('select-type-recette');
       if (!select) return;
 
-      const baseTypes = ["Entrée", "Plat", "Accompagnement", "Dessert"];
+      const baseTypes = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"];
       const typesExistants = Array.from(new Set(listeRecettes.map(r => r.type || 'Plat'))).filter(Boolean);
-      const tousLesTypes = Array.from(new Set([...baseTypes, ...typesExistants])).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+      const uniqueTypes = Array.from(new Set([...baseTypes, ...typesExistants]));
+      const autresTries = uniqueTypes.filter(t => !baseTypes.includes(t)).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+      const ordreFinal = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"].filter(t => uniqueTypes.includes(t)).concat(autresTries);
 
       const currentVal = select.value;
 
-      select.innerHTML = tousLesTypes.map(t => {
-        return `<option value="${t}">${t}</option>`;
+      select.innerHTML = ordreFinal.map(t => {
+        let icone = "";
+        if (t === "Entrée") icone = "🥗 ";
+        else if (t === "Plat") icone = "🍲 ";
+        else if (t === "Viande") icone = "🥩 ";
+        else if (t === "Accompagnement") icone = "🍟 ";
+        else if (t === "Dessert") icone = "🍰 ";
+        return `<option value="${t}">${icone}${t}</option>`;
       }).join('') + '<option value="__Nouveau__">+ Créer un nouveau type...</option>';
 
-      if (tousLesTypes.includes(currentVal)) {
+      if (ordreFinal.includes(currentVal)) {
         select.value = currentVal;
       } else {
         select.value = 'Plat';
@@ -826,7 +835,10 @@
         recettesParType[type].push(r);
       });
 
-      const typesTries = Object.keys(recettesParType).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+      const baseTypes = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"];
+      const typesExistants = Object.keys(recettesParType);
+      const autresTries = typesExistants.filter(t => !baseTypes.includes(t)).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+      const typesTries = baseTypes.filter(t => typesExistants.includes(t)).concat(autresTries);
       const couleurs = obtenirCouleursCategories();
 
       let html = '';
@@ -1185,27 +1197,35 @@
         recettesParType[type].push(r);
       });
 
-      const typesTries = Object.keys(recettesParType).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+      const baseTypes = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"];
+      const typesExistants = Object.keys(recettesParType);
+      const autresTries = typesExistants.filter(t => !baseTypes.includes(t)).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+      const typesTries = baseTypes.filter(t => typesExistants.includes(t)).concat(autresTries);
 
       let options = '<option value="">-- Aucun --</option>';
 
       typesTries.forEach(type => {
         const recettesDuType = recettesParType[type].sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
-        options += `<optgroup label="📂 --- ${type.toUpperCase()} ---">`;
+        let iconeType = "";
+        if (type === "Entrée") iconeType = "🥗 ";
+        else if (type === "Plat") iconeType = "🍲 ";
+        else if (type === "Viande") iconeType = "🥩 ";
+        else if (type === "Accompagnement") iconeType = "🍟 ";
+        else if (type === "Dessert") iconeType = "🍰 ";
+        
+        options += `<optgroup label="${iconeType}${type.toUpperCase()}">`;
         options += recettesDuType.map(r => {
           const nomEchape = r.nom.replace(/"/g, '&quot;');
           const isSelected = (r.id == selectedId);
           
-          let dateFormatee = "Jamais";
+          let dateFormatee = "";
           const dateBrute = derniereRealisationParRecette[r.id]; 
           if (dateBrute) {
             const parts = dateBrute.split('-');
-            dateFormatee = `${parts[2]}/${parts[1]}/${parts[0]}`;
+            dateFormatee = ` (${parts[2]}/${parts[1]}/${parts[0]})`;
           }
           
-          // Si l'élément est sélectionné, on n'affiche que le nom dans le champ fermé pour éviter la date.
-          // Sinon, on affiche le format complet avec la date pour le choix dans le menu déroulant.
-          const texteOption = isSelected ? r.nom : `${r.nom.padEnd(28, ' ')} | 📅 ${dateFormatee}`;
+          const texteOption = isSelected ? r.nom : `${r.nom.padEnd(28, ' ')}${dateFormatee}`;
           
           return `<option value="${r.id}" data-short="${nomEchape}" ${isSelected ? 'selected' : ''}>${texteOption}</option>`;
         }).join('');
@@ -1220,7 +1240,6 @@
       if (!selectedOption) return;
       const nomCourt = selectedOption.getAttribute('data-short');
       if (nomCourt) {
-        // Met à jour le texte de l'option sélectionnée pour ne garder que le nom court
         selectedOption.textContent = nomCourt;
       }
     }
@@ -1288,7 +1307,7 @@
         return `
           <div class="creneau">
             <div class="creneau-header"><span class="creneau-title">Goûter</span></div>
-            <div class="repas-grid">${gouterColumnsHTML}</div>
+            <div class="repas-grid" style="grid-template-columns: 1fr;">${gouterColumnsHTML}</div>
           </div>
         `;
       }
@@ -1317,10 +1336,10 @@
             </div>
           </details>
           <div class="repas-grid">
-            ${colonneRepasHTML(dateStr, creneau, 'entree', 'Entrée', '🥗')}
-            ${colonneRepasHTML(dateStr, creneau, 'plat', 'Plat', '🍲')}
-            ${colonneRepasHTML(dateStr, creneau, 'accompagnement', 'Accomp.', '🍟')}
-            ${colonneRepasHTML(dateStr, creneau, 'dessert', 'Dessert', '🍰')}
+            ${colonneRepasHTML(dateStr, creneau, 'Entrée', 'Entrée', '🥗')}
+            ${colonneRepasHTML(dateStr, creneau, 'Plat', 'Plat', '🍲')}
+            ${colonneRepasHTML(dateStr, creneau, 'Accompagnement', 'Accomp.', '🍟')}
+            ${colonneRepasHTML(dateStr, creneau, 'Dessert', 'Dessert', '🍰')}
           </div>
         </div>
       `;
@@ -1702,11 +1721,21 @@
       inputNouveau.style.display = 'none';
       inputNouveau.value = '';
 
-      const baseTypes = ["Entrée", "Plat", "Accompagnement", "Dessert"];
+      const baseTypes = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"];
       const typesExistants = Array.from(new Set(listeRecettes.map(r => r.type || 'Plat'))).filter(Boolean);
-      const tousLesTypes = Array.from(new Set([...baseTypes, ...typesExistants])).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+      const uniqueTypes = Array.from(new Set([...baseTypes, ...typesExistants]));
+      const autresTries = uniqueTypes.filter(t => !baseTypes.includes(t)).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+      const tousLesTypes = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"].filter(t => uniqueTypes.includes(t)).concat(autresTries);
 
-      selectType.innerHTML = tousLesTypes.map(t => `<option value="${t}">${t}</option>`).join('') + '<option value="__Nouveau__">+ Créer un nouveau type...</option>';
+      selectType.innerHTML = tousLesTypes.map(t => {
+        let icone = "";
+        if (t === "Entrée") icone = "🥗 ";
+        else if (t === "Plat") icone = "🍲 ";
+        else if (t === "Viande") icone = "🥩 ";
+        else if (t === "Accompagnement") icone = "🍟 ";
+        else if (t === "Dessert") icone = "🍰 ";
+        return `<option value="${t}">${icone}${t}</option>`;
+      }).join('') + '<option value="__Nouveau__">+ Créer un nouveau type...</option>';
 
       if (tousLesTypes.includes(typeActuel)) {
         selectType.value = typeActuel;
@@ -1783,10 +1812,10 @@
 
       lignesTableau += `<tr><th style="border: 1px solid var(--border); padding: 10px; background: #e2e8f0; text-align: center;">Midi</th>`;
       datesSemaine.forEach(dateStr => {
-        const entree = getCellContent(dateStr, 'midi', 'entree');
-        const plat = getCellContent(dateStr, 'midi', 'plat');
-        const accomp = getCellContent(dateStr, 'midi', 'accompagnement');
-        const dessert = getCellContent(dateStr, 'midi', 'dessert');
+        const entree = getCellContent(dateStr, 'midi', 'Entrée');
+        const plat = getCellContent(dateStr, 'midi', 'Plat');
+        const accomp = getCellContent(dateStr, 'midi', 'Accompagnement');
+        const dessert = getCellContent(dateStr, 'midi', 'Dessert');
         const planningIdsMidi = planningData.filter(p => p.date === dateStr && p.creneau === 'midi').map(p => p.id);
         const nbPersonnesMidi = presenceData.filter(pr => planningIdsMidi.includes(pr.planning_id)).length;
         const badgeMidi = nbPersonnesMidi > 0 ? `<div style="position: absolute; top: 4px; left: 4px; font-size: 0.75rem; font-weight: bold; background: #e2e8f0; padding: 1px 5px; border-radius: 4px; color: #1e3a8a;">${nbPersonnesMidi} 🍽️</div>` : '';
@@ -1812,10 +1841,10 @@
 
       lignesTableau += `<tr><th style="border: 1px solid var(--border); padding: 10px; background: #e2e8f0; text-align: center;">Soir</th>`;
       datesSemaine.forEach(dateStr => {
-        const entree = getCellContent(dateStr, 'soir', 'entree');
-        const plat = getCellContent(dateStr, 'soir', 'plat');
-        const accomp = getCellContent(dateStr, 'soir', 'accompagnement');
-        const dessert = getCellContent(dateStr, 'soir', 'dessert');
+        const entree = getCellContent(dateStr, 'soir', 'Entrée');
+        const plat = getCellContent(dateStr, 'soir', 'Plat');
+        const accomp = getCellContent(dateStr, 'soir', 'Accompagnement');
+        const dessert = getCellContent(dateStr, 'soir', 'Dessert');
         const planningIdsSoir = planningData.filter(p => p.date === dateStr && p.creneau === 'soir').map(p => p.id);
         const nbPersonnesSoir = presenceData.filter(pr => planningIdsSoir.includes(pr.planning_id)).length;
         const badgeSoir = nbPersonnesSoir > 0 ? `<div style="position: absolute; top: 4px; left: 4px; font-size: 0.75rem; font-weight: bold; background: #e2e8f0; padding: 1px 5px; border-radius: 4px; color: #1e3a8a;">${nbPersonnesSoir} 🍽️</div>` : '';
