@@ -880,7 +880,7 @@ function filtrerOptionsSelect(inputElement, selectId) {
     async function chargerRecettes() {
       const container = document.getElementById('liste-recettes');
       if (!container) return;
-      container.innerHTML = 'Chargement...[cite: 1]';
+      container.innerHTML = 'Chargement...';
 
       const { data: recettesData, error: errRecettes } = await _supabase
         .from('recettes')
@@ -956,6 +956,10 @@ function filtrerOptionsSelect(inputElement, selectId) {
             ? `<div style="margin-top: 6px; font-size: 0.9rem; background: var(--bg); padding: 8px; border-radius: 6px;"><strong>Réalisation :</strong><br>${r.realisation}</div>`
             : '';
 
+          // Vérifie si la réalisation contient du texte (en ignorant les balises HTML vides)
+          const aDesEtapes = r.realisation && r.realisation.replace(/<[^>]*>/g, '').trim().length > 0;
+          const couleurIconeLivre = aDesEtapes ? '#16a34a' : '#d97706';
+
           return `
             <li style="flex-direction:column; align-items:flex-start; margin-bottom: 12px; width: 100%;">
               <div style="display:flex; justify-content:space-between; align-items:center; width:100%; margin-bottom:4px;">
@@ -972,7 +976,7 @@ function filtrerOptionsSelect(inputElement, selectId) {
                 </details>
                 <div class="courses-actions" style="flex-shrink: 0; margin-left: 8px; display: flex; gap: 6px; align-items: center;">
                   <button class="btn-action-icon" title="Réalisation de la recette (Étapes)" onclick="ouvrirModalEdition(${r.id}, '${r.nom.replace(/'/g, "\\'")}')">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${couleurIconeLivre}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
                       <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                       <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
                       <line x1="9" y1="7" x2="15" y2="7"></line>
@@ -989,7 +993,7 @@ function filtrerOptionsSelect(inputElement, selectId) {
                     </svg>
                   </button>
                   <button class="btn-action-icon" title="Modifier le nom et la catégorie" onclick="ouvrirModalInfosRecette(${r.id}, '${r.nom.replace(/'/g, "\\'")}', '${(r.type || 'Plat').replace(/'/g, "\\'")}')">✏️</button>
-				  <button class="btn-action-icon" title="Supprimer" onclick="supprimerRecette(${r.id})">❌</button>
+          <button class="btn-action-icon" title="Supprimer" onclick="supprimerRecette(${r.id})">❌</button>
                 </div>
               </div>
             </li>
@@ -1267,10 +1271,9 @@ function filtrerOptionsSelect(inputElement, selectId) {
       });
     }
 
-    function optionsRecettesHTML(selectedId) {
+    function optionsRecettesHTML(selectedId, typeAttendu = null) {
   const derniereRealisationParRecette = {};
   
-  // Utilisation de l'historique global de tous les plannings
   historiquePlanningGlobal.forEach(p => {
     if (p.recette_id && p.date) {
       if (!derniereRealisationParRecette[p.recette_id] || p.date > derniereRealisationParRecette[p.recette_id]) {
@@ -1286,41 +1289,51 @@ function filtrerOptionsSelect(inputElement, selectId) {
     recettesParType[type].push(r);
   });
 
-      const baseTypes = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"];
-      const typesExistants = Object.keys(recettesParType);
-      const autresTries = typesExistants.filter(t => !baseTypes.includes(t)).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
-      const typesTries = baseTypes.filter(t => typesExistants.includes(t)).concat(autresTries);
+  const baseTypes = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"];
+  const typesExistants = Object.keys(recettesParType);
+  const autresTries = typesExistants.filter(t => !baseTypes.includes(t)).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
+  let typesTries = baseTypes.filter(t => typesExistants.includes(t)).concat(autresTries);
 
-      let options = '<option value="">-- Aucun --</option>';
+  // Si un type est attendu, on le place en premier dans l'ordre d'affichage des optgroups
+  if (typeAttendu) {
+    // Gestion spécifique pour "Goûter" ou "Dessert" qui pointent vers la catégorie Dessert
+    const cible = (typeAttendu === 'Goûter') ? 'Dessert' : typeAttendu;
+    typesTries = [cible, ...typesTries.filter(t => t !== cible)];
+  }
 
-      typesTries.forEach(type => {
-        const recettesDuType = recettesParType[type].sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
-        let iconeType = "";
-        if (type === "Entrée") iconeType = "🥗 ";
-        else if (type === "Plat") iconeType = "🍲 ";
-        else if (type === "Viande") iconeType = "🥩 ";
-        else if (type === "Accompagnement") iconeType = "🍟 ";
-        else if (type === "Dessert") iconeType = "🍰 ";
-        
-        options += `<optgroup label="${iconeType}${type.toUpperCase()}">`;
-        options += recettesDuType.map(r => {
-          const nomEchape = r.nom.replace(/"/g, '&quot;');
-          const isSelected = (r.id == selectedId);
-          
-          let dateFormatee = "";
-          const dateBrute = derniereRealisationParRecette[r.id]; 
-          if (dateBrute) {
-            const parts = dateBrute.split('-');
-            dateFormatee = ` (${parts[2]}/${parts[1]}/${parts[0]})`;
-          }
-          
-          return `<option value="${r.id}" data-short="${nomEchape}" ${isSelected ? 'selected' : ''}>${r.nom}${dateFormatee}</option>`;
-        }).join('');
-        options += `</optgroup>`;
-      });
+  let options = '<option value="">-- Aucun --</option>';
 
-      return options;
-    }
+  typesTries.forEach(type => {
+    const recettesDuType = recettesParType[type];
+    if (!recettesDuType) return;
+    
+    recettesDuType.sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
+    let iconeType = "";
+    if (type === "Entrée") iconeType = "🥗 ";
+    else if (type === "Plat") iconeType = "🍲 ";
+    else if (type === "Viande") iconeType = "🥩 ";
+    else if (type === "Accompagnement") iconeType = "🍟 ";
+    else if (type === "Dessert") iconeType = "🍰 ";
+    
+    options += `<optgroup label="${iconeType}${type.toUpperCase()}">`;
+    options += recettesDuType.map(r => {
+      const nomEchape = r.nom.replace(/"/g, '&quot;');
+      const isSelected = (r.id == selectedId);
+      
+      let dateFormatee = "";
+      const dateBrute = derniereRealisationParRecette[r.id]; 
+      if (dateBrute) {
+        const parts = dateBrute.split('-');
+        dateFormatee = ` (${parts[2]}/${parts[1]}/${parts[0]})`;
+      }
+      
+      return `<option value="${r.id}" data-short="${nomEchape}" ${isSelected ? 'selected' : ''}>${r.nom}${dateFormatee}</option>`;
+    }).join('');
+    options += `</optgroup>`;
+  });
+
+  return options;
+}
 
     function tronquerAffichageSelection(selectElement) {
       const selectedOption = selectElement.options[selectElement.selectedIndex];
@@ -1345,12 +1358,11 @@ function filtrerOptionsSelect(inputElement, selectId) {
 
     return `
       <div class="repas-line-item" style="flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 6px;">
-        <!-- Barre de recherche rapide pour ce menu déroulant -->
         <input type="text" id="${uniqueInputId}" placeholder="🔍 Filtrer..." oninput="filtrerOptionsSelect(this, '${uniqueSelectId}')" style="font-size: 0.75rem; padding: 3px 6px; background: #fff;">
         
         <div style="display: flex; gap: 4px; align-items: center;">
           <select id="${uniqueSelectId}" onchange="changerRepasIndependant('${dateStr}', '${creneau}', '${typeElement}', ${repId === 'null' ? null : repId}, this.value, this); tronquerAffichageSelection(this);" style="flex: 1;" data-init-select>
-            ${optionsRecettesHTML(val)}
+            ${optionsRecettesHTML(val, typeElement)}
           </select>
           
           <button class="btn-primary" style="padding: 4px 5px; font-size: 0.7rem; background-color: #16a34a;" onclick="ajouterLigneChamp('${dateStr}', '${creneau}', '${typeElement}')" title="Ajouter">+</button>
@@ -1397,7 +1409,7 @@ function filtrerOptionsSelect(inputElement, selectId) {
                 
                 <div style="display: flex; gap: 4px; align-items: center;">
                   <select id="${uniqueSelectId}" onchange="changerRepasIndependant('${dateStr}', 'gouter', 'plat', ${repId === 'null' ? null : repId}, this.value, this); if(typeof tronquerAffichageSelection === 'function') tronquerAffichageSelection(this);" style="flex: 1;" data-init-select>
-                    ${optionsRecettesHTML(val)}
+                    ${optionsRecettesHTML(val, 'Dessert')}
                   </select>
                   <button class="btn-primary" style="padding: 4px 5px; font-size: 0.7rem; background-color: #16a34a;" onclick="ajouterLigneChamp('${dateStr}', 'gouter', 'plat')" title="Ajouter">+</button>
                   ${repGouterList.length > 1 && repId !== 'null' ? `<button class="btn-primary" style="padding: 4px 5px; font-size: 0.7rem; background-color: #dc2626;" onclick="supprimerLigneChamp(${repId})" title="Supprimer">-</button>` : ''}
