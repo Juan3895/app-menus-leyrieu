@@ -457,7 +457,7 @@
         <h2 id="titre-semaine" style="text-align: center; margin: 0; font-size: 1.05rem;">Cette semaine</h2>
         <button class="btn-primary" onclick="naviguerSemaine(1)">Suivante ▶</button>
       </div>
-      <div id="calendrier">Chargement du planning...[cite: 1]</div>
+      <div id="calendrier">Chargement du planning...</div>
     </section>
 
     <!-- SECTION RECETTES -->
@@ -508,7 +508,7 @@
 
       <div class="card">
         <h3>Mes Recettes</h3>
-        <div id="liste-recettes">Chargement...[cite: 1]</div>
+        <div id="liste-recettes">Chargement...</div>
       </div>
 	  
       <!-- Modale de modification des étapes de la recette (Pleine hauteur) -->
@@ -600,7 +600,7 @@
           <button class="btn-primary" onclick="ajouterArticleLibre()">Ajouter</button>
         </div>
       </div>
-      <div id="liste-courses">Chargement de la liste...[cite: 1]</div>
+      <div id="liste-courses">Chargement de la liste...</div>
     </section>
 
     <!-- SECTION PERSONNES -->
@@ -614,7 +614,7 @@
       </div>
       <div class="card">
         <h3>Liste des membres</h3>
-        <ul id="liste-personnes">Chargement...[cite: 1]</ul>
+        <ul id="liste-personnes">Chargement...</ul>
       </div>
     </section>
   </main>
@@ -956,8 +956,11 @@ function filtrerOptionsSelect(inputElement, selectId) {
             ? `<div style="margin-top: 6px; font-size: 0.9rem; background: var(--bg); padding: 8px; border-radius: 6px;"><strong>Réalisation :</strong><br>${r.realisation}</div>`
             : '';
 
-          // Vérifie si la réalisation contient du texte (en ignorant les balises HTML vides)
-          const aDesEtapes = r.realisation && r.realisation.replace(/<[^>]*>/g, '').trim().length > 0;
+          // Vérifie la présence de texte (hors balises HTML) OU la présence d'une balise <img>
+          const texteNettoye = r.realisation ? r.realisation.replace(/<[^>]*>/g, '').trim() : '';
+          const contientImage = r.realisation ? /<img\b[^>]*>/i.test(r.realisation) : false;
+          
+          const aDesEtapes = (texteNettoye.length > 0) || contientImage;
           const couleurIconeLivre = aDesEtapes ? '#16a34a' : '#d97706';
 
           return `
