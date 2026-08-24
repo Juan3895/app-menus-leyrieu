@@ -1163,10 +1163,12 @@
 
       cal.innerHTML = html;
       mettreAJourCouleurSelects();
+      cal.querySelectorAll('select').forEach(sel => {
+        if (sel.value) tronquerAffichageSelection(sel);
+      });
     }
 
     function optionsRecettesHTML(selectedId) {
-      // 1. Calculer la dernière réalisation pour chaque recette
       const derniereRealisationParRecette = {};
       planningData.forEach(p => {
         if (p.recette_id && p.date) {
@@ -1192,23 +1194,35 @@
         options += `<optgroup label="📂 --- ${type.toUpperCase()} ---">`;
         options += recettesDuType.map(r => {
           const nomEchape = r.nom.replace(/"/g, '&quot;');
-          const dateBrute = derniereRealisationParRecette[r.id]; 
+          const isSelected = (r.id == selectedId);
           
           let dateFormatee = "Jamais";
+          const dateBrute = derniereRealisationParRecette[r.id]; 
           if (dateBrute) {
             const parts = dateBrute.split('-');
             dateFormatee = `${parts[2]}/${parts[1]}/${parts[0]}`;
           }
           
-          // Formatage sur 2 colonnes visuelles (Nom + Date de dernière réalisation)
-          const texteOption = `${r.nom.padEnd(28, ' ')} | 📅 ${dateFormatee}`;
+          // Si l'élément est sélectionné, on n'affiche que le nom dans le champ fermé pour éviter la date.
+          // Sinon, on affiche le format complet avec la date pour le choix dans le menu déroulant.
+          const texteOption = isSelected ? r.nom : `${r.nom.padEnd(28, ' ')} | 📅 ${dateFormatee}`;
           
-          return `<option value="${r.id}" data-short="${nomEchape}" ${r.id == selectedId ? 'selected' : ''}>${texteOption}</option>`;
+          return `<option value="${r.id}" data-short="${nomEchape}" ${isSelected ? 'selected' : ''}>${texteOption}</option>`;
         }).join('');
         options += `</optgroup>`;
       });
 
       return options;
+    }
+
+    function tronquerAffichageSelection(selectElement) {
+      const selectedOption = selectElement.options[selectElement.selectedIndex];
+      if (!selectedOption) return;
+      const nomCourt = selectedOption.getAttribute('data-short');
+      if (nomCourt) {
+        // Met à jour le texte de l'option sélectionnée pour ne garder que le nom court
+        selectedOption.textContent = nomCourt;
+      }
     }
 
     function colonneRepasHTML(dateStr, creneau, typeElement, titreColonne, emoji) {
@@ -1222,9 +1236,10 @@
         const repId = rep.id || 'null';
         return `
           <div class="repas-line-item">
-            <select onchange="changerRepasIndependant('${dateStr}', '${creneau}', '${typeElement}', ${repId === 'null' ? null : repId}, this.value, this)" style="flex: 1;">
+            <select onchange="changerRepasIndependant('${dateStr}', '${creneau}', '${typeElement}', ${repId === 'null' ? null : repId}, this.value, this); tronquerAffichageSelection(this);" style="flex: 1;" data-init-select>
               ${optionsRecettesHTML(val)}
             </select>
+            
             <button class="btn-primary" style="padding: 4px 5px; font-size: 0.7rem; background-color: #16a34a;" onclick="ajouterLigneChamp('${dateStr}', '${creneau}', '${typeElement}')" title="Ajouter">+</button>
             ${lignesChamp.length > 1 && repId !== 'null' ? `<button class="btn-primary" style="padding: 4px 5px; font-size: 0.7rem; background-color: #dc2626;" onclick="supprimerLigneChamp(${repId})" title="Supprimer">-</button>` : ''}
           </div>
