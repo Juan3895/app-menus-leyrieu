@@ -1164,7 +1164,6 @@
     }
 
     function optionsRecettesHTML(selectedId) {
-      // 1. Calculer la dernière réalisation pour chaque recette
       const derniereRealisationParRecette = {};
       planningData.forEach(p => {
         if (p.recette_id && p.date) {
@@ -1189,7 +1188,7 @@
         const recettesDuType = recettesParType[type].sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
         options += `<optgroup label="📂 --- ${type.toUpperCase()} ---">`;
         options += recettesDuType.map(r => {
-          const dateBrute = derniereRealisationParRecette[r.id]; // Ex: 2026-08-17
+          const dateBrute = derniereRealisationParRecette[r.id];
           
           let suffixeDate = "";
           if (dateBrute) {
@@ -1198,7 +1197,8 @@
             suffixeDate = ` (${dateFormatee})`;
           }
           
-          return `<option value="${r.id}" ${r.id == selectedId ? 'selected' : ''}>${r.nom}${suffixeDate}</option>`;
+          // On ajoute data-nom pour garder le nom pur, et on met le nom + date pour le texte visible dans le menu déroulant
+          return `<option value="${r.id}" data-nom="${r.nom.replace(/"/g, '&quot;')}" ${r.id == selectedId ? 'selected' : ''}>${r.nom}${suffixeDate}</option>`;
         }).join('');
         options += `</optgroup>`;
       });
@@ -1206,6 +1206,18 @@
       return options;
     }
 
+
+    function nettoyerAffichageSelects() {
+      document.querySelectorAll('.repas-grid select').forEach(select => {
+        const selectedOption = select.options[select.selectedIndex];
+        if (selectedOption && selectedOption.dataset.nom) {
+          // Astuce : les selects natifs affichent le textNode de l'option. 
+          // Si on veut masquer la date sur l'élément fermé, le plus simple est de modifier l'affichage 
+          // ou d'utiliser un span par-dessus, mais le comportement standard des selects affichera toujours le texte de l'option.
+        }
+      });
+    }
+    
     function colonneRepasHTML(dateStr, creneau, typeElement, titreColonne, emoji) {
       let lignesChamp = planningData.filter(p => p.date === dateStr && p.creneau === creneau && p.type_element === typeElement);
       if (lignesChamp.length === 0) {
