@@ -470,7 +470,7 @@
             <select id="select-type-recette" onchange="gererChangementTypeRecette()" style="flex: 1; min-width: 150px;">
               <option value="Entrée">🥗 Entrée</option>
               <option value="Plat" selected>🍲 Plat</option>
-              <option value="Viande">🥩 Viande</option>
+              <option value="Viande/Poisson">🥩 Viande/Poisson</option>
               <option value="Accompagnement">🍟 Accompagnement</option>
               <option value="Dessert">🍰 Dessert</option>
               <option value="__Nouveau__">+ Créer un nouveau type...</option>
@@ -504,7 +504,10 @@
       </div>
 
       <div class="card" style="padding: 10px 16px;">
-        <input type="text" id="input-recherche-recette" placeholder="🔍 Filtrer mes recettes..." oninput="filtrerRecettes(this.value)">
+        <div style="position: relative; display: flex; align-items: center;">
+          <input type="text" id="input-recherche-recette" placeholder="🔍 Filtrer mes recettes..." oninput="filtrerRecettes(this.value)" style="padding-right: 30px;">
+          <span onclick="effacerFiltreRecettes()" style="position: absolute; right: 10px; cursor: pointer; color: #dc2626; font-weight: bold; font-size: 1rem;" title="Effacer">✕</span>
+        </div>
       </div>
 
       <div class="card">
@@ -634,8 +637,10 @@
   <script>
     
     const SUPABASE_URL = "https://ppyoygdxputwcrmdkpvm.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBweW95Z2R4cHV0d2NybWRrcHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNDM4NjAsImV4cCI6MjEwMjYxOTg2MH0.58sY1K5Edlg6pD_obyPkHdZV2yfNeQjWZLYhkGLOeJM";
-    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBweW95Z2R4cHV0d2NybWRrcHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODtokzM4NjAsImV4cCI6MjEwMjYxOTg2MH0.58sY1K5Edlg6pD_obyPkHdZV2yfNeQjWZLYhkGLOeJM".replace('tkz', '04'); // Note: keep original key string safely
+    // (Using exact original key string below)
+    const SUPABASE_KEY_CORRECT = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBweW95Z2R4cHV0d2NybWRrcHZtIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODcwNDM4NjAsImV4cCI6MjEwMjYxOTg2MH0.58sY1K5Edlg6pD_obyPkHdZV2yfNeQjWZLYhkGLOeJM";
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY_CORRECT);
 
     let listeRecettes = [];
     let listePersonnes = [];
@@ -684,6 +689,14 @@
   });
 }
 
+function effacerFiltreRecettes() {
+  const input = document.getElementById('input-recherche-recette');
+  if (input) {
+    input.value = '';
+    filtrerRecettes('');
+  }
+}
+
 function filtrerOptionsSelect(inputElement, selectId) {
       const filtre = normaliserTexte(inputElement.value);
       const select = document.getElementById(selectId);
@@ -718,11 +731,19 @@ function filtrerOptionsSelect(inputElement, selectId) {
       mettreAJourCouleurSelects();
     }
 
+    function effacerFiltreSelect(inputId, selectId) {
+      const input = document.getElementById(inputId);
+      if (input) {
+        input.value = '';
+        filtrerOptionsSelect(input, selectId);
+      }
+    }
+
     // Ajoute cet écouteur (par exemple à l'initialisation ou directement ici) pour valider avec "Entrée"
     // (Assure-toi d'associer cet événement keydown sur ton input de recherche dans ton HTML si ce n'est pas déjà fait)
 
 
-    const coulerusParDefaut = {'Entrée': '#ffff00', 'Plat': '#00ff00', 'Viande': '#ff7675', 'Accompagnement': '#0000ff', 'Dessert': '#ff00ff'};
+    const coulerusParDefaut = {'Entrée': '#ffff00', 'Plat': '#00ff00', 'Viande/Poisson': '#ff7675', 'Accompagnement': '#0000ff', 'Dessert': '#ff00ff'};
 
     function obtenirCouleursCategories() {
       const recup = localStorage.getItem('couleurs_categories');
@@ -752,8 +773,12 @@ function filtrerOptionsSelect(inputElement, selectId) {
         if (val && val !== '' && val !== '__Nouveau__') {
           select.classList.add('has-value');
           
+          let typeRecette = val;
+          // Si la valeur est un ID numérique de recette, on retrouve son type réel
           const recetteTrouvee = listeRecettes.find(r => r.id == val);
-          const typeRecette = recetteTrouvee ? (recetteTrouvee.type || 'Plat') : 'Plat';
+          if (recetteTrouvee) {
+            typeRecette = recetteTrouvee.type || 'Plat';
+          }
 
           if (couleurs[typeRecette]) {
             select.style.backgroundColor = couleurs[typeRecette];
@@ -858,11 +883,11 @@ function filtrerOptionsSelect(inputElement, selectId) {
       const select = document.getElementById('select-type-recette');
       if (!select) return;
 
-      const baseTypes = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"];
+      const baseTypes = ["Entrée", "Plat", "Viande/Poisson", "Accompagnement", "Dessert"];
       const typesExistants = Array.from(new Set(listeRecettes.map(r => r.type || 'Plat'))).filter(Boolean);
       const uniqueTypes = Array.from(new Set([...baseTypes, ...typesExistants]));
       const autresTries = uniqueTypes.filter(t => !baseTypes.includes(t)).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
-      const ordreFinal = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"].filter(t => uniqueTypes.includes(t)).concat(autresTries);
+      const ordreFinal = ["Entrée", "Plat", "Viande/Poisson", "Accompagnement", "Dessert"].filter(t => uniqueTypes.includes(t)).concat(autresTries);
 
       const currentVal = select.value;
 
@@ -870,7 +895,7 @@ function filtrerOptionsSelect(inputElement, selectId) {
         let icone = "";
         if (t === "Entrée") icone = "🥗 ";
         else if (t === "Plat") icone = "🍲 ";
-        else if (t === "Viande") icone = "🥩 ";
+        else if (t === "Viande/Poisson") icone = "🥩 ";
         else if (t === "Accompagnement") icone = "🍟 ";
         else if (t === "Dessert") icone = "🍰 ";
         return `<option value="${t}">${icone}${t}</option>`;
@@ -931,7 +956,7 @@ function filtrerOptionsSelect(inputElement, selectId) {
         recettesParType[type].push(r);
       });
 
-      const baseTypes = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"];
+      const baseTypes = ["Entrée", "Plat", "Viande/Poisson", "Accompagnement", "Dessert"];
       const typesExistants = Object.keys(recettesParType);
       const autresTries = typesExistants.filter(t => !baseTypes.includes(t)).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
       const typesTries = baseTypes.filter(t => typesExistants.includes(t)).concat(autresTries);
@@ -946,12 +971,25 @@ function filtrerOptionsSelect(inputElement, selectId) {
           couleurInput = '#2563eb';
         }
 
+        let iconeType = "";
+        if (type === "Entrée") iconeType = "🥗 ";
+        else if (type === "Plat") iconeType = "🍲 ";
+        else if (type === "Viande/Poisson") iconeType = "🥩 ";
+        else if (type === "Accompagnement") iconeType = "🍟 ";
+        else if (type === "Dessert") iconeType = "🍰 ";
+
+        const safeTypeId = type.replace(/[^a-zA-Z0-9]/g, '_');
+
         html += `
-          <h4 class="recette-type-header" style="background-color: ${couleurBg};">
-            <span>${type}</span>
-            <input type="color" value="${couleurInput}" onchange="changerCouleurType('${type.replace(/'/g, "\\'")}', this.value)" style="width:30px; height:24px; padding:0; border:none; background:transparent; cursor:pointer;" title="Changer la couleur">
-          </h4>
-          <ul>`;
+          <details class="category-details" style="margin-bottom: 16px;" open>
+            <summary class="recette-type-header" style="background-color: ${couleurBg}; cursor: pointer; list-style: none; user-select: none; display: flex; justify-content: space-between; align-items: center;">
+              <span style="display: flex; align-items: center; gap: 6px;">${iconeType}${type}</span>
+              <div style="display: flex; align-items: center; gap: 8px;" onclick="event.stopPropagation()">
+                <input type="color" value="${couleurInput}" onchange="changerCouleurType('${type.replace(/'/g, "\\'")}', this.value)" style="width:30px; height:24px; padding:0; border:none; background:transparent; cursor:pointer;" title="Changer la couleur">
+                <span class="category-arrow" style="font-size: 0.8rem; transition: transform 0.2s;">▼</span>
+              </div>
+            </summary>
+            <ul style="padding-top: 8px;">`;
         
         const recettesDuType = recettesParType[type].sort((a, b) => a.nom.localeCompare(b.nom, 'fr', { sensitivity: 'base' }));
         
@@ -1018,7 +1056,7 @@ function filtrerOptionsSelect(inputElement, selectId) {
           `;
         }).join('');
         
-        html += '</ul>';
+        html += '</ul></details>';
       });
 
       container.innerHTML = html;
@@ -1307,7 +1345,7 @@ function filtrerOptionsSelect(inputElement, selectId) {
     recettesParType[type].push(r);
   });
 
-  const baseTypes = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"];
+  const baseTypes = ["Entrée", "Plat", "Viande/Poisson", "Accompagnement", "Dessert"];
   const typesExistants = Object.keys(recettesParType);
   const autresTries = typesExistants.filter(t => !baseTypes.includes(t)).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
   let typesTries = baseTypes.filter(t => typesExistants.includes(t)).concat(autresTries);
@@ -1329,7 +1367,7 @@ function filtrerOptionsSelect(inputElement, selectId) {
     let iconeType = "";
     if (type === "Entrée") iconeType = "🥗 ";
     else if (type === "Plat") iconeType = "🍲 ";
-    else if (type === "Viande") iconeType = "🥩 ";
+    else if (type === "Viande/Poisson") iconeType = "🥩 ";
     else if (type === "Accompagnement") iconeType = "🍟 ";
     else if (type === "Dessert") iconeType = "🍰 ";
     
@@ -1376,7 +1414,10 @@ function filtrerOptionsSelect(inputElement, selectId) {
 
     return `
       <div class="repas-line-item" style="flex-direction: column; align-items: stretch; gap: 4px; margin-bottom: 6px;">
-        <input type="text" id="${uniqueInputId}" placeholder="🔍 Filtrer..." oninput="filtrerOptionsSelect(this, '${uniqueSelectId}')" style="font-size: 0.75rem; padding: 3px 6px; background: #fff;">
+        <div style="position: relative; display: flex; align-items: center;">
+          <input type="text" id="${uniqueInputId}" placeholder="🔍 Filtrer..." oninput="filtrerOptionsSelect(this, '${uniqueSelectId}')" style="font-size: 0.75rem; padding: 3px 22px 3px 6px; background: #fff;">
+          <span onclick="effacerFiltreSelect('${uniqueInputId}', '${uniqueSelectId}')" style="position: absolute; right: 6px; cursor: pointer; color: #dc2626; font-weight: bold; font-size: 0.85rem;" title="Effacer">✕</span>
+        </div>
         
         <div style="display: flex; gap: 4px; align-items: center;">
           <select id="${uniqueSelectId}" onchange="changerRepasIndependant('${dateStr}', '${creneau}', '${typeElement}', ${repId === 'null' ? null : repId}, this.value, this); tronquerAffichageSelection(this);" style="flex: 1;" data-init-select>
@@ -1423,7 +1464,10 @@ function filtrerOptionsSelect(inputElement, selectId) {
               </div>
               <div class="repas-line-item" style="flex-direction: column; align-items: stretch; gap: 4px;">
                 <!-- Barre de recherche rapide pour le goûter -->
-                <input type="text" id="${uniqueInputId}" placeholder="🔍 Filtrer..." oninput="filtrerOptionsSelect(this, '${uniqueSelectId}')" style="font-size: 0.75rem; padding: 3px 6px; background: #fff;">
+                <div style="position: relative; display: flex; align-items: center;">
+                  <input type="text" id="${uniqueInputId}" placeholder="🔍 Filtrer..." oninput="filtrerOptionsSelect(this, '${uniqueSelectId}')" style="font-size: 0.75rem; padding: 3px 22px 3px 6px; background: #fff;">
+                  <span onclick="effacerFiltreSelect('${uniqueInputId}', '${uniqueSelectId}')" style="position: absolute; right: 6px; cursor: pointer; color: #dc2626; font-weight: bold; font-size: 0.85rem;" title="Effacer">✕</span>
+                </div>
                 
                 <div style="display: flex; gap: 4px; align-items: center;">
                   <select id="${uniqueSelectId}" onchange="changerRepasIndependant('${dateStr}', 'gouter', 'plat', ${repId === 'null' ? null : repId}, this.value, this); if(typeof tronquerAffichageSelection === 'function') tronquerAffichageSelection(this);" style="flex: 1;" data-init-select>
@@ -1854,17 +1898,17 @@ function filtrerOptionsSelect(inputElement, selectId) {
       inputNouveau.style.display = 'none';
       inputNouveau.value = '';
 
-      const baseTypes = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"];
+      const baseTypes = ["Entrée", "Plat", "Viande/Poisson", "Accompagnement", "Dessert"];
       const typesExistants = Array.from(new Set(listeRecettes.map(r => r.type || 'Plat'))).filter(Boolean);
       const uniqueTypes = Array.from(new Set([...baseTypes, ...typesExistants]));
       const autresTries = uniqueTypes.filter(t => !baseTypes.includes(t)).sort((a, b) => a.localeCompare(b, 'fr', { sensitivity: 'base' }));
-      const tousLesTypes = ["Entrée", "Plat", "Viande", "Accompagnement", "Dessert"].filter(t => uniqueTypes.includes(t)).concat(autresTries);
+      const tousLesTypes = ["Entrée", "Plat", "Viande/Poisson", "Accompagnement", "Dessert"].filter(t => uniqueTypes.includes(t)).concat(autresTries);
 
       selectType.innerHTML = tousLesTypes.map(t => {
         let icone = "";
         if (t === "Entrée") icone = "🥗 ";
         else if (t === "Plat") icone = "🍲 ";
-        else if (t === "Viande") icone = "🥩 ";
+        else if (t === "Viande/Poisson") icone = "🥩 ";
         else if (t === "Accompagnement") icone = "🍟 ";
         else if (t === "Dessert") icone = "🍰 ";
         return `<option value="${t}">${icone}${t}</option>`;
