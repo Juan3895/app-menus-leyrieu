@@ -648,15 +648,21 @@
     
     let historiquePlanningGlobal = []; // <-- Ajouté pour stocker tout l'historique
     
+    function normaliserTexte(texte) {
+      return texte
+        ? texte.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim()
+        : "";
+    }
+
     function filtrerRecettes(texte) {
-  const filtre = texte.toLowerCase().trim();
+  const filtre = normaliserTexte(texte);
   
   // On cible toutes les lignes de recettes (les <li>) à l'intérieur de la section recettes
   const itemsRecettes = document.querySelectorAll('#sec-recettes li');
   
   itemsRecettes.forEach(li => {
     // On s'assure qu'on ne traite que les li qui contiennent une recette (qui ont un attribut ou un contenu de texte pertinent)
-    const texteLi = li.textContent.toLowerCase();
+    const texteLi = normaliserTexte(li.textContent);
     
     // On vérifie si le texte de la recette correspond au filtre
     if (texteLi.includes(filtre)) {
@@ -679,7 +685,7 @@
 }
 
 function filtrerOptionsSelect(inputElement, selectId) {
-      const filtre = inputElement.value.toLowerCase().trim();
+      const filtre = normaliserTexte(inputElement.value);
       const select = document.getElementById(selectId);
       if (!select) return;
 
@@ -691,7 +697,7 @@ function filtrerOptionsSelect(inputElement, selectId) {
         let groupeVisibles = 0;
 
         options.forEach(opt => {
-          const texte = opt.textContent.toLowerCase();
+          const texte = normaliserTexte(opt.textContent);
           if (filtre === '' || texte.includes(filtre)) {
             opt.hidden = false;
             groupeVisibles++;
